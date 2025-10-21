@@ -534,8 +534,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.calendar_today,
-                                  color: AppColors.primary, size: 20),
-                              const SizedBox(width: 8),
+                                  color: AppColors.primary),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -581,8 +581,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Icon(Icons.access_time,
-                                  color: AppColors.primary, size: 20),
-                              const SizedBox(width: 8),
+                                  color: AppColors.primary),
+                              const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,7 +699,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedType,
+                    initialValue: _selectedType,
                     decoration: InputDecoration(
                       labelText: 'Categoría',
                       labelStyle: GoogleFonts.poppins(),
