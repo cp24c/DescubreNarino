@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "837453922513",
+    "project_id": "descubrenarino-945e6",
+    "storage_bucket": "descubrenarino-945e6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:837453922513:android:028f2186373bb0a76805f0",
+        "android_client_info": {
+          "package_name": "com.example.descubre_narino"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_xaz6li05pbN32mzH2JHksizwM6Nlybk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
