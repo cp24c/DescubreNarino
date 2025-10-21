@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import '../../constants/colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/event_service.dart';
+import '../../services/cloudinary_service.dart'; // NUEVO IMPORT
 import '../../models/event_model.dart';
 
 class CreateEventScreen extends StatefulWidget {
@@ -23,23 +23,90 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _placeController = TextEditingController();
   final _priceController = TextEditingController();
   final _hourController = TextEditingController();
-  
+
   final EventService _eventService = EventService();
-  
+  final CloudinaryService _cloudinaryService = CloudinaryService(); // NUEVO
+
   DateTime? _selectedDate;
   String _selectedType = 'Cultura';
+  String _selectedMunicipality = 'Pasto';
   String _selectedPrivacity = 'public';
   File? _selectedImage;
   String? _uploadedImageUrl;
   bool _isLoading = false;
   bool _isFree = true;
 
+  // CATEGORÍAS ACTUALIZADAS
   final List<String> _eventTypes = [
     'Cultura',
     'Música',
     'Deportes',
     'Gastronomía',
     'Tecnología',
+    'Educación',
+    'Otros',
+  ];
+
+  // MUNICIPIOS DE NARIÑO
+  final List<String> _municipalities = [
+    'Pasto',
+    'Tumaco',
+    'Ipiales',
+    'Túquerres',
+    'Samaniego',
+    'La Unión',
+    'El Charco',
+    'Barbacoas',
+    'Cumbal',
+    'Ricaurte',
+    'Guaitarilla',
+    'Sandoná',
+    'La Cruz',
+    'San Lorenzo',
+    'Aldana',
+    'Ancuyá',
+    'Arboleda',
+    'Belén',
+    'Buesaco',
+    'Colón',
+    'Consacá',
+    'Contadero',
+    'Córdoba',
+    'Cuaspud',
+    'Cumbitara',
+    'El Peñol',
+    'El Rosario',
+    'El Tablón',
+    'El Tambo',
+    'Francisco Pizarro',
+    'Funes',
+    'Guachucal',
+    'Iles',
+    'Imués',
+    'La Florida',
+    'La Llanada',
+    'La Tola',
+    'Leiva',
+    'Linares',
+    'Los Andes',
+    'Magüí',
+    'Mallama',
+    'Mosquera',
+    'Nariño',
+    'Olaya Herrera',
+    'Ospina',
+    'Policarpa',
+    'Potosí',
+    'Providencia',
+    'Puerres',
+    'Pupiales',
+    'Roberto Payán',
+    'Santa Bárbara',
+    'Santacruz',
+    'Sapuyes',
+    'Taminango',
+    'Tangua',
+    'Yacuanquer',
   ];
 
   @override
@@ -81,16 +148,18 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
+  // MÉTODO ACTUALIZADO PARA CLOUDINARY
   Future<String?> _uploadImage() async {
     if (_selectedImage == null) return null;
 
     try {
-      final String fileName = 'events/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
-      final UploadTask uploadTask = storageRef.putFile(_selectedImage!);
-      final TaskSnapshot snapshot = await uploadTask;
-      final String downloadUrl = await snapshot.ref.getDownloadURL();
-      return downloadUrl;
+      // Subir imagen a Cloudinary en la carpeta 'events'
+      final imageUrl = await _cloudinaryService.uploadImage(
+        file: _selectedImage!,
+        folder: 'events',
+      );
+
+      return imageUrl;
     } catch (e) {
       throw 'Error al subir imagen: $e';
     }
@@ -189,10 +258,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         throw 'Usuario no autenticado';
       }
 
-      // Subir imagen si existe
+      // Subir imagen si existe - AHORA USA CLOUDINARY
       if (_selectedImage != null) {
         _uploadedImageUrl = await _uploadImage();
       }
+
+      // Crear lugar completo: "Lugar específico, Municipio, Nariño"
+      final String fullPlace =
+          '${_placeController.text.trim()}, $_selectedMunicipality, Nariño';
 
       // Crear evento
       final EventModel newEvent = EventModel(
@@ -203,7 +276,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         description: _descriptionController.text.trim(),
         date: _selectedDate!,
         hour: _hourController.text.trim(),
-        place: _placeController.text.trim(),
+        place: fullPlace,
         price: _isFree ? 0.0 : double.parse(_priceController.text),
         type: _selectedType,
         privacity: _selectedPrivacity,
@@ -244,11 +317,13 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                '¡Evento Creado!',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
+              Expanded(
+                child: Text(
+                  '¡Evento Creado!',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
               ),
             ],
@@ -298,6 +373,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
             style: GoogleFonts.poppins(),
           ),
           backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -341,7 +417,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                       border: Border.all(
                         color: Colors.grey.shade300,
                         width: 2,
-                        style: BorderStyle.solid,
                       ),
                     ),
                     child: _selectedImage != null
@@ -392,7 +467,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.white,
@@ -425,7 +501,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.white,
@@ -440,7 +517,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 const SizedBox(height: 16),
 
-                // Fecha y Hora
+                // Fecha y Hora - CORREGIDO
                 Row(
                   children: [
                     Expanded(
@@ -454,9 +531,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                             border: Border.all(color: Colors.grey.shade300),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.calendar_today, color: AppColors.primary),
-                              const SizedBox(width: 12),
+                              const Icon(Icons.calendar_today,
+                                  color: AppColors.primary, size: 20),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,14 +547,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                                         color: AppColors.lightText,
                                       ),
                                     ),
+                                    const SizedBox(height: 2),
                                     Text(
                                       _selectedDate != null
                                           ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
                                           : 'Seleccionar',
                                       style: GoogleFonts.poppins(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
@@ -497,9 +578,11 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                             border: Border.all(color: Colors.grey.shade300),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.access_time, color: AppColors.primary),
-                              const SizedBox(width: 12),
+                              const Icon(Icons.access_time,
+                                  color: AppColors.primary, size: 20),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -511,14 +594,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                                         color: AppColors.lightText,
                                       ),
                                     ),
+                                    const SizedBox(height: 2),
                                     Text(
                                       _hourController.text.isEmpty
                                           ? 'Seleccionar'
                                           : _hourController.text,
                                       style: GoogleFonts.poppins(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         fontWeight: FontWeight.w500,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
                                 ),
@@ -533,12 +618,50 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 const SizedBox(height: 16),
 
-                // Lugar
+                // DROPDOWN DE MUNICIPIOS
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: DropdownButtonFormField<String>(
+                    value: _selectedMunicipality,
+                    decoration: InputDecoration(
+                      labelText: 'Municipio',
+                      labelStyle: GoogleFonts.poppins(),
+                      prefixIcon: const Icon(Icons.location_city),
+                      border: InputBorder.none,
+                    ),
+                    style: GoogleFonts.poppins(
+                      color: AppColors.darkText,
+                      fontSize: 14,
+                    ),
+                    isExpanded: true,
+                    items: _municipalities.map((municipality) {
+                      return DropdownMenuItem(
+                        value: municipality,
+                        child: Text(municipality),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedMunicipality = value!;
+                      });
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Lugar específico
                 TextFormField(
                   controller: _placeController,
                   style: GoogleFonts.poppins(),
                   decoration: InputDecoration(
-                    labelText: 'Lugar',
+                    labelText: 'Lugar específico (ej: Parque Central)',
                     labelStyle: GoogleFonts.poppins(),
                     prefixIcon: const Icon(Icons.location_on),
                     border: OutlineInputBorder(
@@ -550,14 +673,15 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.white,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Ingresa el lugar del evento';
+                      return 'Ingresa el lugar específico del evento';
                     }
                     return null;
                   },
@@ -572,7 +696,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: DropdownButtonFormField<String>(
                     value: _selectedType,
                     decoration: InputDecoration(
@@ -614,7 +739,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.attach_money, color: AppColors.primary),
+                          const Icon(Icons.attach_money,
+                              color: AppColors.primary),
                           const SizedBox(width: 8),
                           Text(
                             'Precio',
@@ -678,7 +804,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

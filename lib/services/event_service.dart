@@ -20,10 +20,12 @@ class EventService {
     return _firestore
         .collection('events')
         .where('state', isEqualTo: 'active')
-        .orderBy('date', descending: false)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => EventModel.fromFirestore(doc)).toList();
+      final events =
+          snapshot.docs.map((doc) => EventModel.fromFirestore(doc)).toList();
+      events.sort((a, b) => a.date.compareTo(b.date));
+      return events;
     });
   }
 
@@ -35,12 +37,16 @@ class EventService {
 
     return _firestore
         .collection('events')
-        .where('type', isEqualTo: category)
         .where('state', isEqualTo: 'active')
-        .orderBy('date', descending: false)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => EventModel.fromFirestore(doc)).toList();
+      final events = snapshot.docs
+          .map((doc) => EventModel.fromFirestore(doc))
+          .where((event) => event.type == category)
+          .toList();
+
+      events.sort((a, b) => a.date.compareTo(b.date));
+      return events;
     });
   }
 
@@ -49,10 +55,12 @@ class EventService {
     return _firestore
         .collection('events')
         .where('userId', isEqualTo: userId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => EventModel.fromFirestore(doc)).toList();
+      final events =
+          snapshot.docs.map((doc) => EventModel.fromFirestore(doc)).toList();
+      events.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return events;
     });
   }
 
@@ -79,6 +87,8 @@ class EventService {
   }
 
   // Eliminar un evento
+  // NOTA: Las imágenes de Cloudinary se quedan ahí (no hay API de eliminación en cloudinary_public)
+  // Si necesitas eliminarlas, debes usar la API Admin de Cloudinary desde el backend
   Future<void> deleteEvent(String eventId) async {
     try {
       await _firestore.collection('events').doc(eventId).delete();
@@ -98,7 +108,6 @@ class EventService {
       List<EventModel> allEvents =
           snapshot.docs.map((doc) => EventModel.fromFirestore(doc)).toList();
 
-      // Filtrar por título que contenga la búsqueda
       return allEvents.where((event) {
         return event.title.toLowerCase().contains(query.toLowerCase());
       }).toList();
@@ -107,7 +116,7 @@ class EventService {
     }
   }
 
-  // Agregar evento a favoritos (usando subcollection)
+  // Agregar evento a favoritos
   Future<void> addToFavorites(String userId, String eventId) async {
     try {
       await _firestore
@@ -152,7 +161,6 @@ class EventService {
   // Obtener eventos favoritos del usuario
   Stream<List<EventModel>> getFavoriteEvents(String userId) async* {
     try {
-      // Obtener IDs de eventos favoritos
       var favoritesSnapshot = await _firestore
           .collection('users')
           .doc(userId)
@@ -168,7 +176,6 @@ class EventService {
           .map((doc) => doc.data()['eventId'] as String)
           .toList();
 
-      // Obtener los eventos
       List<EventModel> favoriteEvents = [];
       for (String eventId in eventIds) {
         var eventDoc = await _firestore.collection('events').doc(eventId).get();
@@ -195,17 +202,20 @@ class EventService {
     }
   }
 
-  // Obtener eventos destacados (próximos 5 eventos)
+  // Obtener eventos destacados
   Stream<List<EventModel>> getFeaturedEvents() {
     return _firestore
         .collection('events')
         .where('state', isEqualTo: 'active')
-        .where('date', isGreaterThanOrEqualTo: DateTime.now())
-        .orderBy('date', descending: false)
-        .limit(5)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => EventModel.fromFirestore(doc)).toList();
+      final events = snapshot.docs
+          .map((doc) => EventModel.fromFirestore(doc))
+          .where((event) => event.date.isAfter(DateTime.now()))
+          .toList();
+
+      events.sort((a, b) => a.date.compareTo(b.date));
+      return events.take(5).toList();
     });
   }
 }

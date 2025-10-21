@@ -539,7 +539,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Ingresa tu correo';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}')
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
                         .hasMatch(value)) {
                       return 'Correo inválido';
                     }
@@ -652,29 +652,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     border: Border.all(color: Colors.grey.shade300),
                   ),
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Tipo de cuenta',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: AppColors.lightText,
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4, bottom: 4),
+                        child: Text(
+                          'Tipo de cuenta',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.lightText,
+                          ),
                         ),
                       ),
                       Row(
                         children: [
-                          Expanded(
+                          Flexible(
                             child: RadioListTile<String>(
                               title: Text(
                                 'Usuario',
-                                style: GoogleFonts.poppins(fontSize: 14),
+                                style: GoogleFonts.poppins(fontSize: 13),
                               ),
                               value: 'user',
                               groupValue: _selectedRole,
                               activeColor: AppColors.primary,
                               contentPadding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                              dense: true,
                               onChanged: (value) {
                                 setState(() {
                                   _selectedRole = value!;
@@ -682,16 +687,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               },
                             ),
                           ),
-                          Expanded(
+                          Flexible(
                             child: RadioListTile<String>(
                               title: Text(
                                 'Organizador',
-                                style: GoogleFonts.poppins(fontSize: 14),
+                                style: GoogleFonts.poppins(fontSize: 13),
+                                overflow: TextOverflow.ellipsis,
                               ),
                               value: 'organizer',
                               groupValue: _selectedRole,
                               activeColor: AppColors.primary,
                               contentPadding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                              dense: true,
                               onChanged: (value) {
                                 setState(() {
                                   _selectedRole = value!;

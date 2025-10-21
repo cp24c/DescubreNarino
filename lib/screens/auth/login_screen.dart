@@ -39,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (response['success']) {
+      // Éxito - navegar directamente
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -46,11 +47,15 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } else {
+      // SOLO limpiar contraseña en caso de error
+      _passwordController.clear();
+
       // Si necesita verificación, mostrar diálogo con opción de reenviar
-      if (response['needsVerification'] == true && response['canResend'] == true) {
+      if (response['needsVerification'] == true &&
+          response['canResend'] == true) {
         _showVerificationNeededDialog(response['message']);
       } else {
-        // Error normal
+        // Error normal - mostrar mensaje
         _showErrorSnackBar(response['message']);
       }
     }
@@ -162,16 +167,89 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleResendVerification() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showErrorSnackBar('Por favor ingresa tu correo y contraseña');
+    if (_emailController.text.isEmpty) {
+      _showErrorSnackBar('Por favor ingresa tu correo');
       return;
     }
+
+    // Pedir contraseña en un diálogo
+    final passwordController = TextEditingController();
+    bool obscurePassword = true;
+
+    final password = await showDialog<String>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Confirmar Identidad',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Por favor ingresa tu contraseña para reenviar el correo de verificación.',
+                style: GoogleFonts.poppins(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: passwordController,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Contraseña',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  suffixIcon: IconButton(
+                    icon: Icon(obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined),
+                    onPressed: () {
+                      setDialogState(() {
+                        obscurePassword = !obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancelar',
+                style: GoogleFonts.poppins(color: AppColors.lightText),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context, passwordController.text);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text('Confirmar', style: GoogleFonts.poppins()),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (password == null || password.isEmpty) return;
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     final response = await authProvider.resendVerificationEmail(
       email: _emailController.text.trim(),
-      password: _passwordController.text,
+      password: password,
     );
 
     if (!mounted) return;
@@ -190,9 +268,17 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.poppins(),
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: AppColors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(),
+              ),
+            ),
+          ],
         ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
@@ -209,9 +295,17 @@ class _LoginScreenState extends State<LoginScreen> {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: GoogleFonts.poppins(),
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: AppColors.white),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: GoogleFonts.poppins(),
+              ),
+            ),
+          ],
         ),
         backgroundColor: AppColors.error,
         behavior: SnackBarBehavior.floating,
@@ -238,9 +332,11 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             const Icon(Icons.lock_reset, color: AppColors.primary),
             const SizedBox(width: 12),
-            Text(
-              'Recuperar Contraseña',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+            Expanded(
+              child: Text(
+                'Recuperar Contraseña',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -280,9 +376,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   context,
                   listen: false,
                 );
-                
+
                 Navigator.pop(context);
-                
+
                 final response = await authProvider.resetPassword(
                   emailController.text.trim(),
                 );

@@ -8,7 +8,7 @@ import '../../services/event_service.dart';
 import '../../models/event_model.dart';
 import '../event/create_event_screen.dart';
 import '../profile/profile_screen.dart';
-
+import '../../services/cloudinary_service.dart';
 
 class OrganizerHomeScreen extends StatefulWidget {
   const OrganizerHomeScreen({super.key});
@@ -18,8 +18,11 @@ class OrganizerHomeScreen extends StatefulWidget {
 }
 
 class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
+  final CloudinaryService _cloudinaryService = CloudinaryService();
   int _currentIndex = 0;
   final EventService _eventService = EventService();
+
+  // CATEGORÍAS ACTUALIZADAS
   final List<String> _categories = [
     'Todos',
     'Cultura',
@@ -27,20 +30,23 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
     'Deportes',
     'Gastronomía',
     'Tecnología',
+    'Educación',
+    'Otros',
   ];
   String _selectedCategory = 'Todos';
 
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: _buildCurrentScreen(),
       ),
       bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: authProvider.isOrganizer ? _buildFloatingActionButton() : null,
+      floatingActionButton:
+          authProvider.isOrganizer ? _buildFloatingActionButton() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
@@ -76,48 +82,49 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '¡Hola, $username!',
-                          style: GoogleFonts.poppins(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.darkText,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '¡Hola, $username!',
+                            style: GoogleFonts.poppins(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.darkText,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          authProvider.isOrganizer 
-                              ? 'Gestiona tus eventos'
-                              : 'Descubre eventos increíbles',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: AppColors.lightText,
+                          const SizedBox(height: 4),
+                          Text(
+                            authProvider.isOrganizer
+                                ? 'Gestiona tus eventos'
+                                : 'Descubre eventos increíbles',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: AppColors.lightText,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    Stack(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.notifications_outlined),
-                          iconSize: 28,
-                          color: AppColors.darkText,
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Notificaciones próximamente',
-                                  style: GoogleFonts.poppins(),
-                                ),
-                                backgroundColor: AppColors.primary,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.notifications_outlined),
+                      iconSize: 28,
+                      color: AppColors.darkText,
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Notificaciones próximamente',
+                              style: GoogleFonts.poppins(),
+                            ),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -183,9 +190,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
 
         // Categorías
         SliverToBoxAdapter(
-          child: Container(
+          child: SizedBox(
             height: 50,
-            margin: const EdgeInsets.only(bottom: 20),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -236,6 +242,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
             ),
           ),
         ),
+
+        const SliverToBoxAdapter(child: SizedBox(height: 20)),
 
         // Título de eventos destacados
         SliverToBoxAdapter(
@@ -316,6 +324,15 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                             fontSize: 16,
                             color: AppColors.error,
                           ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          snapshot.error.toString(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: AppColors.lightText,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -523,6 +540,16 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userId = authProvider.currentUser?.uid;
 
+    // Obtener URL optimizada de la imagen
+    final optimizedImageUrl = event.img != null
+        ? _cloudinaryService.getOptimizedUrl(
+            imageUrl: event.img!,
+            width: 800,
+            height: 400,
+            quality: 'auto',
+          )
+        : null;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -547,12 +574,33 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                   topLeft: Radius.circular(16),
                   topRight: Radius.circular(16),
                 ),
-                child: event.img != null
+                child: optimizedImageUrl != null
                     ? Image.network(
-                        event.img!,
+                        optimizedImageUrl, // Usar URL optimizada
                         height: 160,
                         width: double.infinity,
                         fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 160,
+                            width: double.infinity,
+                            color: Colors.grey.shade200,
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                                strokeWidth: 2,
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
                             height: 160,
@@ -634,9 +682,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                         ),
                         child: IconButton(
                           icon: Icon(
-                            isFavorite
-                                ? Icons.bookmark
-                                : Icons.bookmark_border,
+                            isFavorite ? Icons.bookmark : Icons.bookmark_border,
                           ),
                           color: AppColors.primary,
                           onPressed: () async {
@@ -730,14 +776,16 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                       color: AppColors.lightText,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      event.hour,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: AppColors.lightText,
+                    Expanded(
+                      child: Text(
+                        event.hour,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: AppColors.lightText,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
