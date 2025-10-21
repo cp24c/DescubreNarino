@@ -23,9 +23,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _placeController = TextEditingController();
   final _priceController = TextEditingController();
   final _hourController = TextEditingController();
-  
+
   final EventService _eventService = EventService();
-  
+
   DateTime? _selectedDate;
   String _selectedType = 'Cultura';
   String _selectedPrivacity = 'public';
@@ -85,8 +85,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     if (_selectedImage == null) return null;
 
     try {
-      final String fileName = 'events/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
+      final String fileName =
+          'events/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final Reference storageRef =
+          FirebaseStorage.instance.ref().child(fileName);
       final UploadTask uploadTask = storageRef.putFile(_selectedImage!);
       final TaskSnapshot snapshot = await uploadTask;
       final String downloadUrl = await snapshot.ref.getDownloadURL();
@@ -392,7 +394,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.white,
@@ -425,7 +428,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.white,
@@ -455,7 +459,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.calendar_today, color: AppColors.primary),
+                              const Icon(Icons.calendar_today,
+                                  color: AppColors.primary),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -498,7 +503,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.access_time, color: AppColors.primary),
+                              const Icon(Icons.access_time,
+                                  color: AppColors.primary),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -550,7 +556,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                      borderSide:
+                          const BorderSide(color: AppColors.primary, width: 2),
                     ),
                     filled: true,
                     fillColor: AppColors.white,
@@ -572,9 +579,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedType,
+                    initialValue: _selectedType,
                     decoration: InputDecoration(
                       labelText: 'Categoría',
                       labelStyle: GoogleFonts.poppins(),
@@ -614,7 +622,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.attach_money, color: AppColors.primary),
+                          const Icon(Icons.attach_money,
+                              color: AppColors.primary),
                           const SizedBox(width: 8),
                           Text(
                             'Precio',
@@ -678,7 +687,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
