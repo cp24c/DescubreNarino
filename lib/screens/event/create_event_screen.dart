@@ -3,11 +3,15 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:latlong2/latlong.dart';
 import '../../constants/colors.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/event_service.dart';
-import '../../services/cloudinary_service.dart'; // NUEVO IMPORT
+import '../../services/cloudinary_service.dart';
+import '../../services/location_service.dart';
 import '../../models/event_model.dart';
+import '../../models/place_search_result.dart';
 
 class CreateEventScreen extends StatefulWidget {
   const CreateEventScreen({super.key});
@@ -17,6 +21,10 @@ class CreateEventScreen extends StatefulWidget {
 }
 
 class _CreateEventScreenState extends State<CreateEventScreen> {
+  final LocationService _locationService = LocationService();
+  LatLng? _selectedCoordinates;
+  bool _isLoadingPlaces = false;
+
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -25,18 +33,16 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
   final _hourController = TextEditingController();
 
   final EventService _eventService = EventService();
-  final CloudinaryService _cloudinaryService = CloudinaryService(); // NUEVO
+  final CloudinaryService _cloudinaryService = CloudinaryService();
 
   DateTime? _selectedDate;
   String _selectedType = 'Cultura';
-  String _selectedMunicipality = 'Pasto';
   String _selectedPrivacity = 'public';
   File? _selectedImage;
   String? _uploadedImageUrl;
   bool _isLoading = false;
   bool _isFree = true;
 
-  // CATEGORÍAS ACTUALIZADAS
   final List<String> _eventTypes = [
     'Cultura',
     'Música',
@@ -45,68 +51,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     'Tecnología',
     'Educación',
     'Otros',
-  ];
-
-  // MUNICIPIOS DE NARIÑO
-  final List<String> _municipalities = [
-    'Pasto',
-    'Tumaco',
-    'Ipiales',
-    'Túquerres',
-    'Samaniego',
-    'La Unión',
-    'El Charco',
-    'Barbacoas',
-    'Cumbal',
-    'Ricaurte',
-    'Guaitarilla',
-    'Sandoná',
-    'La Cruz',
-    'San Lorenzo',
-    'Aldana',
-    'Ancuyá',
-    'Arboleda',
-    'Belén',
-    'Buesaco',
-    'Colón',
-    'Consacá',
-    'Contadero',
-    'Córdoba',
-    'Cuaspud',
-    'Cumbitara',
-    'El Peñol',
-    'El Rosario',
-    'El Tablón',
-    'El Tambo',
-    'Francisco Pizarro',
-    'Funes',
-    'Guachucal',
-    'Iles',
-    'Imués',
-    'La Florida',
-    'La Llanada',
-    'La Tola',
-    'Leiva',
-    'Linares',
-    'Los Andes',
-    'Magüí',
-    'Mallama',
-    'Mosquera',
-    'Nariño',
-    'Olaya Herrera',
-    'Ospina',
-    'Policarpa',
-    'Potosí',
-    'Providencia',
-    'Puerres',
-    'Pupiales',
-    'Roberto Payán',
-    'Santa Bárbara',
-    'Santacruz',
-    'Sapuyes',
-    'Taminango',
-    'Tangua',
-    'Yacuanquer',
   ];
 
   @override
@@ -148,17 +92,14 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
     }
   }
 
-  // MÉTODO ACTUALIZADO PARA CLOUDINARY
   Future<String?> _uploadImage() async {
     if (_selectedImage == null) return null;
 
     try {
-      // Subir imagen a Cloudinary en la carpeta 'events'
       final imageUrl = await _cloudinaryService.uploadImage(
         file: _selectedImage!,
         folder: 'events',
       );
-
       return imageUrl;
     } catch (e) {
       throw 'Error al subir imagen: $e';
@@ -246,6 +187,19 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
       return;
     }
 
+    if (_selectedCoordinates == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Por favor selecciona un lugar del desplegable',
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isLoading = true;
     });
@@ -258,16 +212,10 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         throw 'Usuario no autenticado';
       }
 
-      // Subir imagen si existe - AHORA USA CLOUDINARY
       if (_selectedImage != null) {
         _uploadedImageUrl = await _uploadImage();
       }
 
-      // Crear lugar completo: "Lugar específico, Municipio, Nariño"
-      final String fullPlace =
-          '${_placeController.text.trim()}, $_selectedMunicipality, Nariño';
-
-      // Crear evento
       final EventModel newEvent = EventModel(
         id: '',
         userId: user.uid,
@@ -276,7 +224,9 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         description: _descriptionController.text.trim(),
         date: _selectedDate!,
         hour: _hourController.text.trim(),
-        place: fullPlace,
+        place: _placeController.text.trim(),
+        latitude: _selectedCoordinates!.latitude,
+        longitude: _selectedCoordinates!.longitude,
         price: _isFree ? 0.0 : double.parse(_priceController.text),
         type: _selectedType,
         privacity: _selectedPrivacity,
@@ -294,7 +244,6 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
         _isLoading = false;
       });
 
-      // Mostrar diálogo de éxito
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -335,8 +284,8 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
           actions: [
             ElevatedButton(
               onPressed: () {
-                Navigator.pop(context); // Cerrar diálogo
-                Navigator.pop(context); // Volver a home
+                Navigator.pop(context);
+                Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -517,7 +466,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 const SizedBox(height: 16),
 
-                // Fecha y Hora - CORREGIDO
+                // Fecha y Hora
                 Row(
                   children: [
                     Expanded(
@@ -618,72 +567,181 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
 
                 const SizedBox(height: 16),
 
-                // DROPDOWN DE MUNICIPIOS
-                Container(
-                  decoration: BoxDecoration(
-                    color: AppColors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: DropdownButtonFormField<String>(
-                    value: _selectedMunicipality,
-                    decoration: InputDecoration(
-                      labelText: 'Municipio',
-                      labelStyle: GoogleFonts.poppins(),
-                      prefixIcon: const Icon(Icons.location_city),
-                      border: InputBorder.none,
-                    ),
-                    style: GoogleFonts.poppins(
-                      color: AppColors.darkText,
-                      fontSize: 14,
-                    ),
-                    isExpanded: true,
-                    items: _municipalities.map((municipality) {
-                      return DropdownMenuItem(
-                        value: municipality,
-                        child: Text(municipality),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedMunicipality = value!;
-                      });
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Lugar específico
-                TextFormField(
-                  controller: _placeController,
-                  style: GoogleFonts.poppins(),
-                  decoration: InputDecoration(
-                    labelText: 'Lugar específico (ej: Parque Central)',
-                    labelStyle: GoogleFonts.poppins(),
-                    prefixIcon: const Icon(Icons.location_on),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.primary, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.white,
-                  ),
+                // AUTOCOMPLETADO DE LUGAR
+                FormField<String>(
+                  initialValue: _placeController.text,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Ingresa el lugar específico del evento';
+                      return 'Selecciona un lugar del desplegable';
+                    }
+                    if (_selectedCoordinates == null) {
+                      return 'Debes seleccionar un lugar de las sugerencias';
                     }
                     return null;
+                  },
+                  builder: (field) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TypeAheadField<PlaceSearchResult>(
+                          builder: (context, controller, focusNode) {
+                            if (controller.text != _placeController.text) {
+                              controller.text = _placeController.text;
+                              controller.selection = TextSelection.fromPosition(
+                                TextPosition(offset: controller.text.length),
+                              );
+                            }
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              style: GoogleFonts.poppins(),
+                              decoration: InputDecoration(
+                                labelText: 'Buscar lugar del evento',
+                                labelStyle: GoogleFonts.poppins(),
+                                hintText: 'Ej: Parque Nariño, Pasto',
+                                hintStyle: GoogleFonts.poppins(
+                                    color: AppColors.lightText),
+                                prefixIcon: const Icon(Icons.location_on),
+                                suffixIcon: _isLoadingPlaces
+                                    ? const Padding(
+                                        padding: EdgeInsets.all(12.0),
+                                        child: SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    AppColors.primary),
+                                          ),
+                                        ),
+                                      )
+                                    : _selectedCoordinates != null
+                                        ? const Icon(Icons.check_circle,
+                                            color: AppColors.success)
+                                        : null,
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.primary, width: 2),
+                                ),
+                                errorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide:
+                                      const BorderSide(color: AppColors.error),
+                                ),
+                                focusedErrorBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: AppColors.error, width: 2),
+                                ),
+                                filled: true,
+                                fillColor: AppColors.white,
+                              ),
+                              onChanged: (v) {
+                                field.didChange(v);
+                                _placeController.text = v;
+                              },
+                            );
+                          },
+                          suggestionsCallback: (pattern) async {
+                            if (pattern.length < 3)
+                              return <PlaceSearchResult>[];
+                            setState(() => _isLoadingPlaces = true);
+                            final results =
+                                await _locationService.searchPlaces(pattern);
+                            setState(() => _isLoadingPlaces = false);
+                            return results;
+                          },
+                          itemBuilder: (context, PlaceSearchResult suggestion) {
+                            return ListTile(
+                              leading: Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(Icons.location_on,
+                                    color: AppColors.primary, size: 24),
+                              ),
+                              title: Text(suggestion.placeName,
+                                  style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14)),
+                              subtitle: Text(suggestion.fullAddress,
+                                  style: GoogleFonts.poppins(
+                                      fontSize: 12, color: AppColors.lightText),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis),
+                            );
+                          },
+                          onSelected: (PlaceSearchResult suggestion) {
+                            _placeController.text = suggestion.fullAddress;
+                            _selectedCoordinates = LatLng(
+                                suggestion.latitude, suggestion.longitude);
+                            field.didChange(suggestion.fullAddress);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Row(
+                                  children: [
+                                    const Icon(Icons.check_circle,
+                                        color: AppColors.white),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                        child: Text(
+                                            'Ubicación seleccionada correctamente',
+                                            style: GoogleFonts.poppins())),
+                                  ],
+                                ),
+                                backgroundColor: AppColors.success,
+                                behavior: SnackBarBehavior.floating,
+                                duration: const Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          emptyBuilder: (context) {
+                            return Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                  'No se encontraron lugares. Intenta con otro nombre.',
+                                  style: GoogleFonts.poppins(
+                                      color: AppColors.lightText, fontSize: 14),
+                                  textAlign: TextAlign.center),
+                            );
+                          },
+                          errorBuilder: (context, error) {
+                            return Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                  'Error al buscar lugares. Verifica tu conexión.',
+                                  style: GoogleFonts.poppins(
+                                      color: AppColors.error, fontSize: 14),
+                                  textAlign: TextAlign.center),
+                            );
+                          },
+                          debounceDuration: const Duration(milliseconds: 500),
+                        ),
+                        if (field.hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12, top: 8),
+                            child: Text(
+                              field.errorText!,
+                              style: GoogleFonts.poppins(
+                                color: AppColors.error,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
                   },
                 ),
 
@@ -699,7 +757,7 @@ class _CreateEventScreenState extends State<CreateEventScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: DropdownButtonFormField<String>(
-                    initialValue: _selectedType,
+                    value: _selectedType,
                     decoration: InputDecoration(
                       labelText: 'Categoría',
                       labelStyle: GoogleFonts.poppins(),

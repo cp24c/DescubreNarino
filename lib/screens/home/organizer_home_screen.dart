@@ -1,3 +1,4 @@
+import 'package:descubre_narino/screens/map/map_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -505,35 +506,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   }
 
   Widget _buildDiscoverContent() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.map_outlined,
-            size: 80,
-            color: AppColors.lightText,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Descubrir',
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.darkText,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Próximamente: Mapa de eventos',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              color: AppColors.lightText,
-            ),
-          ),
-        ],
-      ),
-    );
+    return const MapScreen(); // Tu nueva pantalla de mapa
   }
 
   Widget _buildEventCard(EventModel event) {

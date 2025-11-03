@@ -9,6 +9,10 @@ class EventModel {
   final DateTime date;
   final String hour; // Formato: "18:00" o "6:00 PM"
   final String place;
+  final double? latitude; // NUEVO: Coordenada latitud del evento
+  final double? longitude; // NUEVO: Coordenada longitud del evento
+  final String?
+      organizerId; // NUEVO: ID del organizador (opcional pero recomendado)
   final double price; // 0 para eventos gratuitos
   final String type; // Cultura, Música, Deportes, Gastronomía, Tecnología
   final String privacity; // "public" o "private"
@@ -26,6 +30,8 @@ class EventModel {
     required this.date,
     required this.hour,
     required this.place,
+    this.latitude, // NUEVO
+    this.longitude, // NUEVO
     this.price = 0.0,
     required this.type,
     this.privacity = 'public',
@@ -33,6 +39,7 @@ class EventModel {
     required this.organizer,
     required this.createdAt,
     this.attendeesCount = 0,
+    this.organizerId,
   });
 
   // Convertir desde Firestore
@@ -48,6 +55,8 @@ class EventModel {
       date: (data['date'] as Timestamp).toDate(),
       hour: data['hour'] ?? '',
       place: data['place'] ?? '',
+      latitude: data['latitude']?.toDouble(), // NUEVO
+      longitude: data['longitude']?.toDouble(), // NUEVO
       price: (data['price'] ?? 0).toDouble(),
       type: data['type'] ?? 'Cultura',
       privacity: data['privacity'] ?? 'public',
@@ -68,6 +77,8 @@ class EventModel {
       'date': Timestamp.fromDate(date),
       'hour': hour,
       'place': place,
+      'latitude': latitude, // NUEVO
+      'longitude': longitude, // NUEVO
       'price': price,
       'type': type,
       'privacity': privacity,
@@ -88,6 +99,8 @@ class EventModel {
     DateTime? date,
     String? hour,
     String? place,
+    double? latitude, // NUEVO
+    double? longitude, // NUEVO
     double? price,
     String? type,
     String? privacity,
@@ -105,6 +118,8 @@ class EventModel {
       date: date ?? this.date,
       hour: hour ?? this.hour,
       place: place ?? this.place,
+      latitude: latitude ?? this.latitude, // NUEVO
+      longitude: longitude ?? this.longitude, // NUEVO
       price: price ?? this.price,
       type: type ?? this.type,
       privacity: privacity ?? this.privacity,
@@ -129,4 +144,7 @@ class EventModel {
 
   // Verificar si el evento ya pasó
   bool get isPast => date.isBefore(DateTime.now());
+
+  // Verificar si el evento tiene coordenadas para mostrar en mapa
+  bool get hasLocation => latitude != null && longitude != null;
 }
