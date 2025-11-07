@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../constants/colors.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart'; // NUEVO: Import del ThemeProvider
 import '../../services/event_service.dart';
 import '../../models/event_model.dart';
 import '../auth/login_screen.dart';
@@ -134,7 +135,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onPressed: () => Navigator.pop(context),
               child: Text(
                 'Cancelar',
-                style: GoogleFonts.poppins(color: AppColors.lightText),
+                style: GoogleFonts.poppins(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColorsDark.lightText
+                      : AppColors.lightText,
+                ),
               ),
             ),
             ElevatedButton(
@@ -161,7 +166,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           'Contraseña actualizada exitosamente',
                           style: GoogleFonts.poppins(),
                         ),
-                        backgroundColor: AppColors.success,
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark
+                            ? AppColorsDark.success
+                            : AppColors.success,
                       ),
                     );
                   } catch (e) {
@@ -173,15 +180,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           e.toString(),
                           style: GoogleFonts.poppins(),
                         ),
-                        backgroundColor: AppColors.error,
+                        backgroundColor: Theme.of(context).brightness == Brightness.dark
+                            ? AppColorsDark.error
+                            : AppColors.error,
                       ),
                     );
                   }
                 }
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
+                backgroundColor: Theme.of(context).brightness == Brightness.dark
+                    ? AppColorsDark.primary
+                    : AppColors.primary,
+                foregroundColor: Theme.of(context).brightness == Brightness.dark
+                    ? AppColorsDark.background
+                    : AppColors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -217,7 +230,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancelar',
-              style: GoogleFonts.poppins(color: AppColors.lightText),
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColorsDark.lightText
+                    : AppColors.lightText,
+              ),
             ),
           ),
           ElevatedButton(
@@ -236,8 +253,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.white,
+              backgroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? AppColorsDark.error
+                  : AppColors.error,
+              foregroundColor: Theme.of(context).brightness == Brightness.dark
+                  ? AppColorsDark.background
+                  : AppColors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -256,21 +277,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.currentUser;
+    
+    // Determinar colores según el tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColorsDark.primary : AppColors.primary;
+    final backgroundColor = isDark ? AppColorsDark.background : AppColors.background;
+    final surfaceColor = isDark ? AppColorsDark.surface : AppColors.white;
+    final textColor = isDark ? AppColorsDark.darkText : AppColors.darkText;
+    final lightTextColor = isDark ? AppColorsDark.lightText : AppColors.lightText;
 
     if (user == null) {
       return const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: backgroundColor,
       body: CustomScrollView(
         slivers: [
           // Header con perfil
           SliverToBoxAdapter(
             child: Container(
-              decoration: const BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                gradient: isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(30),
                   bottomRight: Radius.circular(30),
                 ),
@@ -283,7 +312,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     width: 100,
                     height: 100,
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: surfaceColor,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
@@ -299,18 +328,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               user.userImg!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
-                                return const Icon(
+                                return Icon(
                                   Icons.person,
                                   size: 50,
-                                  color: AppColors.primary,
+                                  color: primaryColor,
                                 );
                               },
                             ),
                           )
-                        : const Icon(
+                        : Icon(
                             Icons.person,
                             size: 50,
-                            color: AppColors.primary,
+                            color: primaryColor,
                           ),
                   ),
                   const SizedBox(height: 16),
@@ -319,7 +348,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.white,
+                      color: isDark ? AppColorsDark.background : AppColors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -327,7 +356,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     user.email,
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: AppColors.white.withOpacity(0.9),
+                      color: isDark 
+                          ? AppColorsDark.background.withOpacity(0.9) 
+                          : AppColors.white.withOpacity(0.9),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -337,14 +368,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       vertical: 6,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.white.withOpacity(0.2),
+                      color: (isDark ? AppColorsDark.background : AppColors.white).withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       user.role == 'organizer' ? 'Organizador' : 'Usuario',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: AppColors.white,
+                        color: isDark ? AppColorsDark.background : AppColors.white,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -366,16 +397,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.darkText,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 12),
+                  
+                  // Botón Cambiar Contraseña
                   _buildOptionCard(
                     icon: Icons.lock_outline,
                     title: 'Cambiar Contraseña',
                     onTap: _showChangePasswordDialog,
                   ),
                   const SizedBox(height: 8),
+                  
+                  // NUEVO: Botón de Cambio de Tema
+                  Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, _) {
+                      return _buildOptionCard(
+                        icon: themeProvider.themeIcon,
+                        title: themeProvider.themeLabel,
+                        onTap: () async {
+                          await themeProvider.toggleTheme();
+                          
+                          if (!mounted) return;
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  Icon(
+                                    themeProvider.themeIcon,
+                                    color: Theme.of(context).colorScheme.surface,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      'Tema cambiado a: ${themeProvider.themeLabel}',
+                                      style: GoogleFonts.poppins(),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  // Botón Cerrar Sesión
                   _buildOptionCard(
                     icon: Icons.logout,
                     title: 'Cerrar Sesión',
@@ -397,7 +470,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.darkText,
+                    color: textColor,
                   ),
                 ),
               ),
@@ -423,22 +496,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(40),
                         decoration: BoxDecoration(
-                          color: AppColors.white,
+                          color: surfaceColor,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.event_busy,
                               size: 60,
-                              color: AppColors.lightText,
+                              color: lightTextColor,
                             ),
                             const SizedBox(height: 16),
                             Text(
                               'No has creado eventos aún',
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
-                                color: AppColors.lightText,
+                                color: lightTextColor,
                               ),
                             ),
                           ],
@@ -478,17 +551,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColorsDark.primary : AppColors.primary;
+    final errorColor = isDark ? AppColorsDark.error : AppColors.error;
+    final surfaceColor = isDark ? AppColorsDark.surface : AppColors.white;
+    final textColor = isDark ? AppColorsDark.darkText : AppColors.darkText;
+    final lightTextColor = isDark ? AppColorsDark.lightText : AppColors.lightText;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.white,
+          color: surfaceColor,
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -499,13 +579,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: (isDestructive ? AppColors.error : AppColors.primary)
-                    .withOpacity(0.1),
+                color: (isDestructive ? errorColor : primaryColor).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(
                 icon,
-                color: isDestructive ? AppColors.error : AppColors.primary,
+                color: isDestructive ? errorColor : primaryColor,
                 size: 24,
               ),
             ),
@@ -515,14 +594,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
-                  color: isDestructive ? AppColors.error : AppColors.darkText,
+                  color: isDestructive ? errorColor : textColor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
             Icon(
               Icons.chevron_right,
-              color: AppColors.lightText,
+              color: lightTextColor,
             ),
           ],
         ),
@@ -531,14 +610,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildEventCard(EventModel event) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColorsDark.primary : AppColors.primary;
+    final surfaceColor = isDark ? AppColorsDark.surface : AppColors.white;
+    final textColor = isDark ? AppColorsDark.darkText : AppColors.darkText;
+    final lightTextColor = isDark ? AppColorsDark.lightText : AppColors.lightText;
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+    final errorColor = isDark ? AppColorsDark.error : AppColors.error;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -556,8 +643,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(8),
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.primary.withOpacity(0.3),
-                    AppColors.secondary.withOpacity(0.3),
+                    primaryColor.withOpacity(0.3),
+                    (isDark ? AppColorsDark.secondary : AppColors.secondary).withOpacity(0.3),
                   ],
                 ),
               ),
@@ -568,18 +655,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         event.img!,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
+                          return Icon(
                             Icons.image_outlined,
                             size: 30,
-                            color: AppColors.white,
+                            color: isDark ? AppColorsDark.white : AppColors.white,
                           );
                         },
                       ),
                     )
-                  : const Icon(
+                  : Icon(
                       Icons.image_outlined,
                       size: 30,
-                      color: AppColors.white,
+                      color: isDark ? AppColorsDark.white : AppColors.white,
                     ),
             ),
             const SizedBox(width: 12),
@@ -592,7 +679,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.darkText,
+                      color: textColor,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -600,17 +687,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_today,
                         size: 14,
-                        color: AppColors.lightText,
+                        color: lightTextColor,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         DateFormat('dd/MM/yyyy').format(event.date),
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: AppColors.lightText,
+                          color: lightTextColor,
                         ),
                       ),
                     ],
@@ -625,17 +712,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: event.state == 'active'
-                              ? AppColors.success.withOpacity(0.1)
-                              : AppColors.error.withOpacity(0.1),
+                              ? successColor.withOpacity(0.1)
+                              : errorColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           event.state == 'active' ? 'Activo' : 'Inactivo',
                           style: GoogleFonts.poppins(
                             fontSize: 11,
-                            color: event.state == 'active'
-                                ? AppColors.success
-                                : AppColors.error,
+                            color: event.state == 'active' ? successColor : errorColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -645,7 +730,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         '${event.attendeesCount} asistentes',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: AppColors.lightText,
+                          color: lightTextColor,
                         ),
                       ),
                     ],
@@ -654,7 +739,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             PopupMenuButton(
-              icon: const Icon(Icons.more_vert, color: AppColors.lightText),
+              icon: Icon(Icons.more_vert, color: lightTextColor),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -674,11 +759,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 PopupMenuItem(
                   child: Row(
                     children: [
-                      const Icon(Icons.delete, size: 20, color: AppColors.error),
+                      Icon(Icons.delete, size: 20, color: errorColor),
                       const SizedBox(width: 8),
                       Text(
                         'Eliminar',
-                        style: GoogleFonts.poppins(color: AppColors.error),
+                        style: GoogleFonts.poppins(color: errorColor),
                       ),
                     ],
                   ),
@@ -696,6 +781,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showDeleteDialog(String eventId) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = isDark ? AppColorsDark.primary : AppColors.primary;
+    final errorColor = isDark ? AppColorsDark.error : AppColors.error;
+    final lightTextColor = isDark ? AppColorsDark.lightText : AppColors.lightText;
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -715,7 +806,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cancelar',
-              style: GoogleFonts.poppins(color: AppColors.lightText),
+              style: GoogleFonts.poppins(color: lightTextColor),
             ),
           ),
           ElevatedButton(
@@ -733,7 +824,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'Evento eliminado exitosamente',
                       style: GoogleFonts.poppins(),
                     ),
-                    backgroundColor: AppColors.success,
+                    backgroundColor: successColor,
                   ),
                 );
               } catch (e) {
@@ -745,14 +836,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       'Error al eliminar evento',
                       style: GoogleFonts.poppins(),
                     ),
-                    backgroundColor: AppColors.error,
+                    backgroundColor: errorColor,
                   ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: AppColors.white,
+              backgroundColor: errorColor,
+              foregroundColor: isDark ? AppColorsDark.background : AppColors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

@@ -46,10 +46,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!mounted) return;
 
     if (response['success']) {
-      // Mostrar diálogo de éxito
       _showSuccessDialog();
     } else {
-      // Manejar diferentes tipos de errores
       if (response['needsVerification'] == true) {
         _showVerificationDialog();
       } else if (response['alreadyExists'] == true) {
@@ -61,10 +59,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showSuccessDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        backgroundColor: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -73,12 +79,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.success.withOpacity(0.1),
+                color: successColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.check_circle,
-                color: AppColors.success,
+                color: successColor,
                 size: 30,
               ),
             ),
@@ -89,6 +95,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
+                  color: textColor,
                 ),
               ),
             ),
@@ -100,24 +107,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             Text(
               'Tu cuenta ha sido creada exitosamente.',
-              style: GoogleFonts.poppins(fontSize: 15),
+              style: GoogleFonts.poppins(fontSize: 15, color: textColor),
             ),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.accent.withOpacity(0.3),
+                  color: primaryColor.withOpacity(0.3),
                 ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.mail_outline,
-                    color: AppColors.primary,
+                    color: primaryColor,
                     size: 24,
                   ),
                   const SizedBox(width: 12),
@@ -130,6 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: GoogleFonts.poppins(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
+                            color: textColor,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -137,7 +145,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           'Te hemos enviado un correo de verificación a ${_emailController.text}. Por favor, verifica tu correo antes de iniciar sesión.',
                           style: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: AppColors.lightText,
+                            color: lightTextColor,
                           ),
                         ),
                       ],
@@ -151,7 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               'Revisa tu bandeja de entrada y spam.',
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: AppColors.lightText,
+                color: lightTextColor,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -160,25 +168,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         actions: [
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context); // Cerrar diálogo
-              Navigator.pop(context); // Volver a login
+              Navigator.pop(context);
+              Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
             child: Text(
               'Entendido',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-              ),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -187,9 +182,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showVerificationDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -198,12 +200,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.accent.withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.mark_email_unread,
-                color: AppColors.primary,
+                color: primaryColor,
                 size: 28,
               ),
             ),
@@ -214,6 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
+                  color: textColor,
                 ),
               ),
             ),
@@ -225,20 +228,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             Text(
               'Este correo ya está registrado pero no ha sido verificado.',
-              style: GoogleFonts.poppins(fontSize: 14),
+              style: GoogleFonts.poppins(fontSize: 14, color: textColor),
             ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.info_outline,
-                    color: AppColors.primary,
+                    color: primaryColor,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -247,7 +250,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       'Por favor revisa tu bandeja de entrada y spam para verificar tu cuenta.',
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: AppColors.darkText,
+                        color: textColor,
                       ),
                     ),
                   ),
@@ -261,25 +264,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cerrar',
-              style: GoogleFonts.poppins(color: AppColors.lightText),
+              style: GoogleFonts.poppins(color: lightTextColor),
             ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context); // Volver a login
+              Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
             child: Text(
               'Ir a Login',
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -291,9 +283,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showAlreadyExistsDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final errorColor = isDark ? AppColorsDark.error : AppColors.error;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: surfaceColor,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
@@ -302,12 +302,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: errorColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.error_outline,
-                color: AppColors.error,
+                color: errorColor,
                 size: 28,
               ),
             ),
@@ -318,6 +318,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 style: GoogleFonts.poppins(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
+                  color: textColor,
                 ),
               ),
             ),
@@ -329,20 +330,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             Text(
               'Este correo ya está registrado y verificado.',
-              style: GoogleFonts.poppins(fontSize: 14),
+              style: GoogleFonts.poppins(fontSize: 14, color: textColor),
             ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.info_outline,
-                    color: AppColors.primary,
+                    color: primaryColor,
                     size: 20,
                   ),
                   const SizedBox(width: 8),
@@ -351,7 +352,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       'Puedes iniciar sesión directamente o recuperar tu contraseña si la olvidaste.',
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: AppColors.darkText,
+                        color: textColor,
                       ),
                     ),
                   ),
@@ -365,25 +366,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Cerrar',
-              style: GoogleFonts.poppins(color: AppColors.lightText),
+              style: GoogleFonts.poppins(color: lightTextColor),
             ),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context); // Volver a login
+              Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
             child: Text(
               'Ir a Login',
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
@@ -395,18 +385,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _showErrorSnackBar(String message) {
+    final errorColor = Theme.of(context).brightness == Brightness.dark
+        ? AppColorsDark.error
+        : AppColors.error;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.poppins(),
+          style: GoogleFonts.poppins(color: Colors.white),
         ),
-        backgroundColor: AppColors.error,
+        backgroundColor: errorColor,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
           label: 'OK',
-          textColor: AppColors.white,
+          textColor: Colors.white,
           onPressed: () {},
         ),
       ),
@@ -415,13 +409,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final backgroundColor = Theme.of(context).colorScheme.background;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.darkText),
+          icon: Icon(Icons.arrow_back, color: textColor),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -438,13 +439,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Container(
                     height: 80,
                     width: 80,
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                    decoration: BoxDecoration(
+                      gradient: isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.event_available,
-                      color: AppColors.white,
+                      color: isDark ? Colors.black : Colors.white,
                       size: 40,
                     ),
                   ),
@@ -457,7 +458,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.darkText,
+                    color: textColor,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -468,7 +469,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   'Únete a DescubreNariño',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
-                    color: AppColors.lightText,
+                    color: lightTextColor,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -478,25 +479,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Campo de nombre de usuario
                 TextFormField(
                   controller: _usernameController,
-                  style: GoogleFonts.poppins(),
+                  style: GoogleFonts.poppins(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'Nombre de usuario',
-                    labelStyle: GoogleFonts.poppins(),
-                    prefixIcon: const Icon(Icons.person_outline),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.primary, width: 2),
-                    ),
+                    labelStyle: GoogleFonts.poppins(color: lightTextColor),
+                    prefixIcon: Icon(Icons.person_outline, color: lightTextColor),
                     filled: true,
-                    fillColor: AppColors.white,
+                    fillColor: surfaceColor,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -515,25 +504,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  style: GoogleFonts.poppins(),
+                  style: GoogleFonts.poppins(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'Correo electrónico',
-                    labelStyle: GoogleFonts.poppins(),
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.primary, width: 2),
-                    ),
+                    labelStyle: GoogleFonts.poppins(color: lightTextColor),
+                    prefixIcon: Icon(Icons.email_outlined, color: lightTextColor),
                     filled: true,
-                    fillColor: AppColors.white,
+                    fillColor: surfaceColor,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -553,16 +530,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
-                  style: GoogleFonts.poppins(),
+                  style: GoogleFonts.poppins(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'Contraseña',
-                    labelStyle: GoogleFonts.poppins(),
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    labelStyle: GoogleFonts.poppins(color: lightTextColor),
+                    prefixIcon: Icon(Icons.lock_outline, color: lightTextColor),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscurePassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
+                        color: lightTextColor,
                       ),
                       onPressed: () {
                         setState(() {
@@ -570,20 +548,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.primary, width: 2),
-                    ),
                     filled: true,
-                    fillColor: AppColors.white,
+                    fillColor: surfaceColor,
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -602,16 +568,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
-                  style: GoogleFonts.poppins(),
+                  style: GoogleFonts.poppins(color: textColor),
                   decoration: InputDecoration(
                     labelText: 'Confirmar contraseña',
-                    labelStyle: GoogleFonts.poppins(),
-                    prefixIcon: const Icon(Icons.lock_outline),
+                    labelStyle: GoogleFonts.poppins(color: lightTextColor),
+                    prefixIcon: Icon(Icons.lock_outline, color: lightTextColor),
                     suffixIcon: IconButton(
                       icon: Icon(
                         _obscureConfirmPassword
                             ? Icons.visibility_outlined
                             : Icons.visibility_off_outlined,
+                        color: lightTextColor,
                       ),
                       onPressed: () {
                         setState(() {
@@ -619,20 +586,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          const BorderSide(color: AppColors.primary, width: 2),
-                    ),
                     filled: true,
-                    fillColor: AppColors.white,
+                    fillColor: surfaceColor,
                   ),
                   validator: (value) {
                     if (value != _passwordController.text) {
@@ -647,9 +602,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Selector de rol
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: surfaceColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    border: Border.all(color: lightTextColor.withOpacity(0.3)),
                   ),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -662,7 +617,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           'Tipo de cuenta',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: AppColors.lightText,
+                            color: lightTextColor,
                           ),
                         ),
                       ),
@@ -672,11 +627,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: RadioListTile<String>(
                               title: Text(
                                 'Usuario',
-                                style: GoogleFonts.poppins(fontSize: 13),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: textColor,
+                                ),
                               ),
                               value: 'user',
                               groupValue: _selectedRole,
-                              activeColor: AppColors.primary,
+                              activeColor: primaryColor,
                               contentPadding: EdgeInsets.zero,
                               visualDensity: VisualDensity.compact,
                               dense: true,
@@ -691,12 +649,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: RadioListTile<String>(
                               title: Text(
                                 'Organizador',
-                                style: GoogleFonts.poppins(fontSize: 13),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  color: textColor,
+                                ),
                                 overflow: TextOverflow.ellipsis,
                               ),
                               value: 'organizer',
                               groupValue: _selectedRole,
-                              activeColor: AppColors.primary,
+                              activeColor: primaryColor,
                               contentPadding: EdgeInsets.zero,
                               visualDensity: VisualDensity.compact,
                               dense: true,
@@ -720,11 +681,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   builder: (context, authProvider, _) {
                     return Container(
                       decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
+                        gradient: isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withOpacity(0.3),
+                            color: primaryColor.withOpacity(0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -735,7 +696,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             authProvider.isLoading ? null : _handleRegister,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
-                          foregroundColor: AppColors.white,
+                          foregroundColor: isDark ? Colors.black : Colors.white,
                           shadowColor: Colors.transparent,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
@@ -743,13 +704,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         child: authProvider.isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 24,
                                 width: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2.5,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    AppColors.white,
+                                    isDark ? Colors.black : Colors.white,
                                   ),
                                 ),
                               )
@@ -774,7 +735,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Text(
                       '¿Ya tienes cuenta? ',
                       style: GoogleFonts.poppins(
-                        color: AppColors.lightText,
+                        color: lightTextColor,
                       ),
                     ),
                     GestureDetector(
@@ -782,7 +743,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Text(
                         'Inicia sesión',
                         style: GoogleFonts.poppins(
-                          color: AppColors.primary,
+                          color: primaryColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:intl/date_symbol_data_local.dart'; // NUEVO
+import 'package:intl/date_symbol_data_local.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart'; // NUEVO
 import 'screens/auth/login_screen.dart';
 import 'screens/home/organizer_home_screen.dart';
+import 'constants/app_theme.dart'; // NUEVO
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,7 +17,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Inicializar localizaciones de fecha en español - NUEVO
+  // Inicializar localizaciones de fecha en español
   await initializeDateFormatting('es_ES', null);
 
   runApp(const MyApp());
@@ -29,15 +31,23 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()), // NUEVO: Provider del tema
       ],
-      child: MaterialApp(
-        title: 'DescubreNariño',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFFF28705)),
-          useMaterial3: true,
-        ),
-        home: const AuthWrapper(),
+      child: Consumer<ThemeProvider>(
+        // NUEVO: Consumer que escucha cambios en el tema
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'DescubreNariño',
+            debugShowCheckedModeBanner: false,
+            
+            // CONFIGURACIÓN DE TEMA
+            theme: AppTheme.lightTheme, // Tema claro
+            darkTheme: AppTheme.darkTheme, // Tema oscuro
+            themeMode: themeProvider.themeModeEnum, // Modo actual: system, light o dark
+            
+            home: const AuthWrapper(),
+          );
+        },
       ),
     );
   }

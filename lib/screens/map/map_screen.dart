@@ -12,13 +12,6 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
-/// Pantalla principal del mapa que muestra eventos con sus ubicaciones
-///
-/// Funcionalidades:
-/// - Obtiene ubicación GPS del usuario en tiempo real
-/// - Carga eventos desde Firebase que tengan coordenadas
-/// - Muestra marcadores en el mapa para cada evento
-/// - Permite ver detalles del evento al tocar un marcador
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -27,11 +20,9 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> {
-  // Token de acceso de Mapbox (REEMPLAZAR CON EL TUYO)
   static const String _mapboxToken =
       'pk.eyJ1IjoiY2hhcnRlc3QiLCJhIjoiY21oaTM4eWVkMHpzczJvb2cxZWozeGFoOCJ9.3fF0_MaR-s998PLI5HHa2Q';
 
-  // Nuevas variables para la navegación y rutas
   LatLng? _destinationPosition;
   List<LatLng> _routePolyline = [];
   bool _showRoute = false;
@@ -39,27 +30,23 @@ class _MapScreenState extends State<MapScreen> {
   final EventService _eventService = EventService();
   final MapController _mapController = MapController();
 
-  LatLng? _userPosition; // Ubicación GPS del usuario
+  LatLng? _userPosition;
   bool _isLoading = true;
   String? _errorMessage;
-  List<EventModel> _eventsWithLocation = []; // Eventos que tienen coordenadas
+  List<EventModel> _eventsWithLocation = [];
 
-  // Nuevas variables para ubicación en tiempo real
   StreamSubscription<Position>? _positionStreamSubscription;
   bool _isTrackingRealTime = true;
   double? _locationAccuracy;
 
-  /// Solo verifica permisos - no obtiene ubicación
   Future<void> _verifyPermissions() async {
     LocationPermission permission;
 
-    // Verificar si el servicio de ubicación está habilitado
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       throw 'Los servicios de ubicación están deshabilitados. Por favor actívalos en la configuración.';
     }
 
-    // Verificar permisos
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -73,23 +60,19 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  /// Inicia el seguimiento de ubicación en tiempo real
   void _startRealTimeLocation() async {
     try {
-      // Verificar permisos primero
       await _verifyPermissions();
 
       print("🎯 Iniciando seguimiento de ubicación en tiempo real...");
 
       final LocationSettings locationSettings = LocationSettings(
         accuracy: LocationAccuracy.best,
-        distanceFilter: 5, // Actualizar cada 5 metros
+        distanceFilter: 5,
       );
 
-      // Cancelar suscripción anterior si existe
       _positionStreamSubscription?.cancel();
 
-      // Variable para controlar si ya recibimos la primera ubicación
       bool firstLocationReceived = false;
 
       _positionStreamSubscription = Geolocator.getPositionStream(
@@ -100,21 +83,18 @@ class _MapScreenState extends State<MapScreen> {
           print("   → Latitud: ${position.latitude}");
           print("   → Longitud: ${position.longitude}");
           print("   → Precisión: ${position.accuracy}m");
-          print("   → Timestamp: ${position.timestamp}");
 
           setState(() {
             _userPosition = LatLng(position.latitude, position.longitude);
             _locationAccuracy = position.accuracy;
             _isTrackingRealTime = true;
 
-            // Solo marcamos que no está cargando cuando recibimos la primera ubicación
             if (!firstLocationReceived) {
               _isLoading = false;
               firstLocationReceived = true;
             }
           });
 
-          // Mover el mapa automáticamente para seguir al usuario
           if (_isTrackingRealTime) {
             _mapController.move(_userPosition!, 16.0);
           }
@@ -123,19 +103,17 @@ class _MapScreenState extends State<MapScreen> {
           print("❌ Error en stream de ubicación: $error");
           setState(() {
             _isTrackingRealTime = false;
-            _isLoading = false; // En caso de error, también dejamos de cargar
+            _isLoading = false;
           });
         },
         cancelOnError: false,
       );
 
-      // Timeout: si después de 10 segundos no recibimos ubicación, mostramos error
       Future.delayed(const Duration(seconds: 10), () {
         if (!firstLocationReceived && mounted) {
           setState(() {
             _isLoading = false;
-            _errorMessage =
-                'No se pudo obtener la ubicación después de 10 segundos';
+            _errorMessage = 'No se pudo obtener la ubicación después de 10 segundos';
           });
         }
       });
@@ -145,62 +123,52 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
-  /// Maneja errores de ubicación
   void _handleLocationError(dynamic e) {
     setState(() {
       _errorMessage = e.toString();
       _isLoading = false;
       _isTrackingRealTime = false;
-      // Ubicación por defecto: Centro de Pasto, Nariño
       _userPosition = LatLng(1.2136, -77.2811);
     });
 
     _mapController.move(_userPosition!, 13.0);
   }
 
-  /// Detiene el seguimiento de ubicación en tiempo real
   void _stopRealTimeLocation() {
     _positionStreamSubscription?.cancel();
     setState(() {
       _isTrackingRealTime = false;
     });
-    print("⏹️ Seguimiento de ubicación detenido");
+    print("ℹ️ Seguimiento de ubicación detenido");
   }
 
-  /// Alterna entre modo de seguimiento y modo estático
   void _toggleRealTimeTracking() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+
     if (_isTrackingRealTime) {
       _stopRealTimeLocation();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Seguimiento desactivado',
-            style: GoogleFonts.poppins(),
-          ),
-          backgroundColor: Colors.orange, // Temporal hasta que agregues warning
+          content: Text('Seguimiento desactivado', style: GoogleFonts.poppins()),
+          backgroundColor: Colors.orange,
         ),
       );
     } else {
       _startRealTimeLocation();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Seguimiento activado',
-            style: GoogleFonts.poppins(),
-          ),
-          backgroundColor: AppColors.success,
+          content: Text('Seguimiento activado', style: GoogleFonts.poppins()),
+          backgroundColor: successColor,
         ),
       );
     }
   }
 
-  /// Carga eventos desde Firebase que tengan coordenadas
   void _loadEventsWithLocation() {
     _eventService.getActiveEvents().listen((events) {
       setState(() {
-        // Filtrar solo eventos con coordenadas válidas
-        _eventsWithLocation =
-            events.where((event) => event.hasLocation).toList();
+        _eventsWithLocation = events.where((event) => event.hasLocation).toList();
       });
     });
   }
@@ -208,120 +176,46 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
-    _startRealTimeLocation(); // ← Cambiado a tiempo real
+    _startRealTimeLocation();
     _loadEventsWithLocation();
   }
 
   @override
   void dispose() {
-    _positionStreamSubscription?.cancel(); // ← Importante limpiar el stream
+    _positionStreamSubscription?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: _isLoading
           ? _buildLoadingWidget()
           : _userPosition == null
               ? _buildErrorWidget()
               : _buildMapWidget(),
-
-      // Botón flotante para centrar en ubicación del usuario
       floatingActionButton: !_isLoading && _userPosition != null
-          ? Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                // Botón para limpiar ruta (solo visible cuando hay ruta)
-                if (_showRoute)
-                  FloatingActionButton(
-                    heroTag: 'clearRoute',
-                    onPressed: _clearRoute,
-                    backgroundColor: AppColors.error,
-                    child: const Icon(
-                      Icons.clear,
-                      color: AppColors.white,
-                    ),
-                  ),
-                if (_showRoute) const SizedBox(height: 12),
-
-                // Botón para activar/desactivar seguimiento en tiempo real
-                FloatingActionButton(
-                  heroTag: 'tracking',
-                  onPressed: _toggleRealTimeTracking,
-                  backgroundColor:
-                      _isTrackingRealTime ? AppColors.primary : AppColors.white,
-                  child: Icon(
-                    _isTrackingRealTime
-                        ? Icons.location_searching
-                        : Icons.location_disabled,
-                    color: _isTrackingRealTime
-                        ? AppColors.white
-                        : AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Botón para centrar en ubicación del usuario
-                FloatingActionButton(
-                  heroTag: 'centerUser',
-                  onPressed: () {
-                    if (_userPosition != null) {
-                      _mapController.move(_userPosition!, 16.0);
-                    }
-                  },
-                  backgroundColor: AppColors.white,
-                  child: const Icon(
-                    Icons.my_location,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Botón para recargar eventos
-                FloatingActionButton(
-                  heroTag: 'reload',
-                  onPressed: () {
-                    _loadEventsWithLocation();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Eventos actualizados',
-                          style: GoogleFonts.poppins(),
-                        ),
-                        backgroundColor: AppColors.success,
-                        duration: const Duration(seconds: 2),
-                      ),
-                    );
-                  },
-                  backgroundColor: AppColors.white,
-                  child: const Icon(
-                    Icons.refresh,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ],
-            )
+          ? _buildFloatingButtons()
           : null,
     );
   }
 
-  /// Widget de carga mientras se obtiene ubicación
   Widget _buildLoadingWidget() {
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(
-            color: AppColors.primary,
-            strokeWidth: 3,
-          ),
+          CircularProgressIndicator(color: primaryColor, strokeWidth: 3),
           const SizedBox(height: 20),
           Text(
             'Obteniendo tu ubicación...',
             style: GoogleFonts.poppins(
-              color: AppColors.darkText,
+              color: textColor,
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
@@ -329,18 +223,20 @@ class _MapScreenState extends State<MapScreen> {
           const SizedBox(height: 8),
           Text(
             'Activando seguimiento en tiempo real',
-            style: GoogleFonts.poppins(
-              color: AppColors.lightText,
-              fontSize: 14,
-            ),
+            style: GoogleFonts.poppins(color: lightTextColor, fontSize: 14),
           ),
         ],
       ),
     );
   }
 
-  /// Widget de error si no se puede obtener ubicación
   Widget _buildErrorWidget() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final errorColor = isDark ? AppColorsDark.error : AppColors.error;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -350,14 +246,10 @@ class _MapScreenState extends State<MapScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: errorColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.location_off,
-                size: 60,
-                color: AppColors.error,
-              ),
+              child: Icon(Icons.location_off, size: 60, color: errorColor),
             ),
             const SizedBox(height: 24),
             Text(
@@ -365,17 +257,14 @@ class _MapScreenState extends State<MapScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.darkText,
+                color: textColor,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               _errorMessage ?? 'Error desconocido',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: AppColors.lightText,
-              ),
+              style: GoogleFonts.poppins(fontSize: 14, color: lightTextColor),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -388,22 +277,12 @@ class _MapScreenState extends State<MapScreen> {
                 _startRealTimeLocation();
               },
               icon: const Icon(Icons.refresh),
-              label: Text(
-                'Reintentar',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              label: Text('Reintentar', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 16,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                backgroundColor: primaryColor,
+                foregroundColor: isDark ? Colors.black : Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
             const SizedBox(height: 16),
@@ -417,10 +296,7 @@ class _MapScreenState extends State<MapScreen> {
               },
               child: Text(
                 'Continuar sin mi ubicación',
-                style: GoogleFonts.poppins(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: GoogleFonts.poppins(color: primaryColor, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -429,34 +305,34 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  /// Widget principal del mapa con marcadores
   Widget _buildMapWidget() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+
+    // Usar mapa oscuro si está en dark mode
+    final mapStyle = isDark ? 'dark-v11' : 'streets-v12';
+
     return Stack(
       children: [
-        // Mapa
         FlutterMap(
           mapController: _mapController,
           options: MapOptions(
             initialCenter: _userPosition!,
             minZoom: 5,
             maxZoom: 18,
-            initialZoom: 16, // Zoom más cercano por defecto
+            initialZoom: 16,
           ),
           children: [
-            // Capa de tiles del mapa (fondo)
             TileLayer(
               urlTemplate:
-                  'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=$_mapboxToken',
+                  'https://api.mapbox.com/styles/v1/mapbox/$mapStyle/tiles/{z}/{x}/{y}?access_token=$_mapboxToken',
               additionalOptions: const {},
               tileProvider: NetworkTileProvider(),
             ),
-
-            // Capa de marcadores de eventos
-            MarkerLayer(
-              markers: _buildEventMarkers(),
-            ),
-
-            // Marcador de ubicación del usuario
+            MarkerLayer(markers: _buildEventMarkers()),
             MarkerLayer(
               markers: [
                 Marker(
@@ -467,37 +343,34 @@ class _MapScreenState extends State<MapScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: _isTrackingRealTime
-                          ? AppColors.success.withOpacity(0.3)
-                          : AppColors.primary.withOpacity(0.3),
+                          ? successColor.withOpacity(0.3)
+                          : primaryColor.withOpacity(0.3),
                     ),
                     child: Center(
                       child: Icon(
                         _isTrackingRealTime
                             ? Icons.location_searching
                             : Icons.person_pin_circle,
-                        color: _isTrackingRealTime
-                            ? AppColors.success
-                            : AppColors.primary,
+                        color: _isTrackingRealTime ? successColor : primaryColor,
                         size: 40,
                       ),
                     ),
                   ),
                 ),
-                // Marcador de destino (si hay ruta activa)
                 if (_showRoute && _destinationPosition != null)
                   Marker(
                     point: _destinationPosition!,
                     width: 40,
                     height: 40,
                     child: Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.error,
+                        color: isDark ? AppColorsDark.error : AppColors.error,
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Icon(
                           Icons.place,
-                          color: AppColors.white,
+                          color: isDark ? Colors.black : Colors.white,
                           size: 24,
                         ),
                       ),
@@ -505,21 +378,18 @@ class _MapScreenState extends State<MapScreen> {
                   ),
               ],
             ),
-
             if (_showRoute && _routePolyline.isNotEmpty)
               PolylineLayer(
                 polylines: [
                   Polyline(
                     points: _routePolyline,
-                    color: AppColors.primary.withOpacity(0.8),
+                    color: primaryColor.withOpacity(0.8),
                     strokeWidth: 5,
                     borderStrokeWidth: 2,
-                    borderColor: AppColors.white.withOpacity(0.8),
+                    borderColor: (isDark ? Colors.black : Colors.white).withOpacity(0.8),
                   ),
                 ],
               ),
-
-            // Loading overlay para cálculo de rutas
             if (_isLoading)
               Positioned(
                 top: 0,
@@ -532,7 +402,7 @@ class _MapScreenState extends State<MapScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
+                        color: surfaceColor,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
@@ -545,15 +415,12 @@ class _MapScreenState extends State<MapScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const CircularProgressIndicator(
-                            color: AppColors.primary,
-                            strokeWidth: 3,
-                          ),
+                          CircularProgressIndicator(color: primaryColor, strokeWidth: 3),
                           const SizedBox(height: 16),
                           Text(
                             'Calculando la mejor ruta...',
                             style: GoogleFonts.poppins(
-                              color: AppColors.darkText,
+                              color: textColor,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -565,109 +432,169 @@ class _MapScreenState extends State<MapScreen> {
               ),
           ],
         ),
+        _buildHeader(),
+      ],
+    );
+  }
 
-        // Header con información
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  AppColors.white,
-                  AppColors.white.withOpacity(0.9),
-                  AppColors.white.withOpacity(0),
-                ],
-              ),
-            ),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _isTrackingRealTime
-                          ? AppColors.success.withOpacity(0.1)
-                          : AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      _isTrackingRealTime
-                          ? Icons.location_searching
-                          : Icons.map,
-                      color: _isTrackingRealTime
-                          ? AppColors.success
-                          : AppColors.primary,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _isTrackingRealTime
-                              ? 'Siguiendo tu ubicación en tiempo real'
-                              : 'Eventos en el Mapa',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.darkText,
-                          ),
-                        ),
-                        Text(
-                          _isTrackingRealTime
-                              ? 'Ubicación actualizada en tiempo real'
-                              : '${_eventsWithLocation.length} eventos disponibles',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: _isTrackingRealTime
-                                ? AppColors.success
-                                : AppColors.lightText,
-                          ),
-                        ),
-                        if (_locationAccuracy != null && _isTrackingRealTime)
-                          Text(
-                            'Precisión: ${_locationAccuracy!.toStringAsFixed(1)}m',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              color: _locationAccuracy! < 50
-                                  ? AppColors.success
-                                  : Colors.orange, // Temporal hasta warning
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+  Widget _buildHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              surfaceColor,
+              surfaceColor.withOpacity(0.9),
+              surfaceColor.withOpacity(0),
+            ],
           ),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: _isTrackingRealTime
+                      ? successColor.withOpacity(0.1)
+                      : primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _isTrackingRealTime ? Icons.location_searching : Icons.map,
+                  color: _isTrackingRealTime ? successColor : primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _isTrackingRealTime
+                          ? 'Siguiendo tu ubicación en tiempo real'
+                          : 'Eventos en el Mapa',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                      ),
+                    ),
+                    Text(
+                      _isTrackingRealTime
+                          ? 'Ubicación actualizada en tiempo real'
+                          : '${_eventsWithLocation.length} eventos disponibles',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: _isTrackingRealTime ? successColor : textColor.withOpacity(0.6),
+                      ),
+                    ),
+                    if (_locationAccuracy != null && _isTrackingRealTime)
+                      Text(
+                        'Precisión: ${_locationAccuracy!.toStringAsFixed(1)}m',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: _locationAccuracy! < 50 ? successColor : Colors.orange,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFloatingButtons() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final errorColor = isDark ? AppColorsDark.error : AppColors.error;
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (_showRoute)
+          FloatingActionButton(
+            heroTag: 'clearRoute',
+            onPressed: _clearRoute,
+            backgroundColor: errorColor,
+            child: Icon(Icons.clear, color: isDark ? Colors.black : Colors.white),
+          ),
+        if (_showRoute) const SizedBox(height: 12),
+        FloatingActionButton(
+          heroTag: 'tracking',
+          onPressed: _toggleRealTimeTracking,
+          backgroundColor: _isTrackingRealTime ? successColor : surfaceColor,
+          child: Icon(
+            _isTrackingRealTime ? Icons.location_searching : Icons.location_disabled,
+            color: _isTrackingRealTime ? (isDark ? Colors.black : Colors.white) : primaryColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        FloatingActionButton(
+          heroTag: 'centerUser',
+          onPressed: () {
+            if (_userPosition != null) {
+              _mapController.move(_userPosition!, 16.0);
+            }
+          },
+          backgroundColor: surfaceColor,
+          child: Icon(Icons.my_location, color: primaryColor),
+        ),
+        const SizedBox(height: 12),
+        FloatingActionButton(
+          heroTag: 'reload',
+          onPressed: () {
+            _loadEventsWithLocation();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Eventos actualizados', style: GoogleFonts.poppins()),
+                backgroundColor: successColor,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+          backgroundColor: surfaceColor,
+          child: Icon(Icons.refresh, color: primaryColor),
         ),
       ],
     );
   }
 
-  /// Crea la lista de marcadores para los eventos
   List<Marker> _buildEventMarkers() {
-    // Agrupar eventos por ubicación
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final errorColor = isDark ? AppColorsDark.error : AppColors.error;
+
     Map<String, List<EventModel>> eventsByLocation = {};
 
     for (var event in _eventsWithLocation) {
@@ -690,50 +617,41 @@ class _MapScreenState extends State<MapScreen> {
         child: GestureDetector(
           onTap: () => _showEventsBottomSheet(eventsAtLocation),
           child: Stack(
-            alignment: Alignment.center, // Centrar todo el contenido
+            alignment: Alignment.center,
             children: [
-              // Círculo de fondo pulsante
               Container(
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.primary.withOpacity(0.2),
+                  color: primaryColor.withOpacity(0.2),
                 ),
               ),
-              // Icono del marcador principal
               Container(
                 width: 30,
                 height: 30,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
+                decoration: BoxDecoration(
+                  color: primaryColor,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.location_on,
-                  color: AppColors.white,
+                  color: isDark ? Colors.black : Colors.white,
                   size: 18,
                 ),
               ),
-              // Badge para mostrar cantidad de eventos - POSICIONADO CORRECTAMENTE
               if (eventsAtLocation.length > 1)
                 Positioned(
-                  top: 0, // Posicionar en la parte superior
-                  right: 0, // Posicionar en la parte derecha
+                  top: 0,
+                  right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: AppColors.error,
-                      shape: BoxShape.circle,
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
+                    decoration: BoxDecoration(color: errorColor, shape: BoxShape.circle),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                     child: Text(
                       eventsAtLocation.length.toString(),
                       style: GoogleFonts.poppins(
-                        color: AppColors.white,
+                        color: isDark ? Colors.black : Colors.white,
                         fontSize: 8,
                         fontWeight: FontWeight.bold,
                       ),
@@ -748,35 +666,37 @@ class _MapScreenState extends State<MapScreen> {
     }).toList();
   }
 
-  /// Muestra un BottomSheet con TODOS los eventos en una ubicación
   void _showEventsBottomSheet(List<EventModel> events) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
         ),
         child: Column(
           children: [
-            // Handle bar
             Container(
               margin: const EdgeInsets.symmetric(vertical: 12),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.lightText.withOpacity(0.3),
+                color: lightTextColor.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-
-            // Header con información de la ubicación
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
@@ -784,14 +704,10 @@ class _MapScreenState extends State<MapScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(
-                      Icons.location_on,
-                      color: AppColors.primary,
-                      size: 20,
-                    ),
+                    child: Icon(Icons.location_on, color: primaryColor, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -803,15 +719,12 @@ class _MapScreenState extends State<MapScreen> {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.darkText,
+                            color: textColor,
                           ),
                         ),
                         Text(
                           '${events.length} evento${events.length > 1 ? 's' : ''} en esta ubicación',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: AppColors.lightText,
-                          ),
+                          style: GoogleFonts.poppins(fontSize: 12, color: lightTextColor),
                         ),
                       ],
                     ),
@@ -819,10 +732,7 @@ class _MapScreenState extends State<MapScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 8),
-
-            // Lista de eventos
             Expanded(
               child: events.length == 1
                   ? _buildEventDetails(events.first)
@@ -839,16 +749,21 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  /// Construye una tarjeta para cada evento en la lista
   Widget _buildEventCard(EventModel event) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppColorsDark.background : AppColors.background;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -859,7 +774,6 @@ class _MapScreenState extends State<MapScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: () {
-            // Cerrar el bottomSheet actual y abrir uno con detalles completos
             Navigator.pop(context);
             _showEventDetailsBottomSheet(event);
           },
@@ -868,13 +782,12 @@ class _MapScreenState extends State<MapScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Imagen del evento
                 Container(
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: primaryColor.withOpacity(0.1),
                   ),
                   child: event.img != null
                       ? ClipRRect(
@@ -883,107 +796,76 @@ class _MapScreenState extends State<MapScreen> {
                             event.img!,
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.event,
-                                color: AppColors.primary,
-                              );
+                              return Icon(Icons.event, color: primaryColor);
                             },
                           ),
                         )
-                      : const Icon(
-                          Icons.event,
-                          color: AppColors.primary,
-                        ),
+                      : Icon(Icons.event, color: primaryColor),
                 ),
                 const SizedBox(width: 12),
-                // Información del evento
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Categoría
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
+                          color: primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           event.type,
                           style: GoogleFonts.poppins(
-                            color: AppColors.primary,
+                            color: primaryColor,
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       const SizedBox(height: 4),
-                      // Título
                       Text(
                         event.title,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.darkText,
+                          color: textColor,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      // Fecha y hora
                       Row(
                         children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            size: 12,
-                            color: AppColors.lightText,
-                          ),
+                          Icon(Icons.calendar_today, size: 12, color: lightTextColor),
                           const SizedBox(width: 4),
                           Text(
                             DateFormat('MMM d', 'es').format(event.date),
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: AppColors.lightText,
-                            ),
+                            style: GoogleFonts.poppins(fontSize: 11, color: lightTextColor),
                           ),
                           const SizedBox(width: 8),
-                          const Icon(
-                            Icons.access_time,
-                            size: 12,
-                            color: AppColors.lightText,
-                          ),
+                          Icon(Icons.access_time, size: 12, color: lightTextColor),
                           const SizedBox(width: 4),
                           Text(
                             event.hour,
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              color: AppColors.lightText,
-                            ),
+                            style: GoogleFonts.poppins(fontSize: 11, color: lightTextColor),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      // Precio
                       Text(
                         event.formattedPrice,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: event.isFree
-                              ? AppColors.success
-                              : AppColors.primary,
+                              ? (isDark ? AppColorsDark.success : AppColors.success)
+                              : primaryColor,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.chevron_right,
-                  color: AppColors.lightText,
-                ),
+                Icon(Icons.chevron_right, color: lightTextColor),
               ],
             ),
           ),
@@ -992,14 +874,18 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  /// Construye los detalles de un solo evento
   Widget _buildEventDetails(EventModel event) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Imagen del evento
           if (event.img != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
@@ -1013,164 +899,108 @@ class _MapScreenState extends State<MapScreen> {
                     width: double.infinity,
                     height: 200,
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
+                      gradient: isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.image_outlined,
                       size: 60,
-                      color: AppColors.white,
+                      color: isDark ? Colors.black : Colors.white,
                     ),
                   );
                 },
               ),
             ),
-
           const SizedBox(height: 20),
-
-          // Categoría
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 6,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(
               event.type,
               style: GoogleFonts.poppins(
-                color: AppColors.primary,
+                color: primaryColor,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-
           const SizedBox(height: 12),
-
-          // Título
           Text(
             event.title,
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppColors.darkText,
+              color: textColor,
             ),
           ),
-
           const SizedBox(height: 16),
-
-          // Organizador
           Row(
             children: [
-              const Icon(
-                Icons.person_outline,
-                size: 20,
-                color: AppColors.lightText,
-              ),
+              Icon(Icons.person_outline, size: 20, color: lightTextColor),
               const SizedBox(width: 8),
               Text(
                 'Organizado por ${event.organizer}',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: AppColors.lightText,
-                ),
+                style: GoogleFonts.poppins(fontSize: 14, color: lightTextColor),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // Fecha y hora
           Row(
             children: [
-              const Icon(
-                Icons.calendar_today_outlined,
-                size: 20,
-                color: AppColors.lightText,
-              ),
+              Icon(Icons.calendar_today_outlined, size: 20, color: lightTextColor),
               const SizedBox(width: 8),
               Text(
                 DateFormat('EEEE, d MMMM yyyy', 'es').format(event.date),
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: AppColors.darkText,
-                ),
+                style: GoogleFonts.poppins(fontSize: 14, color: textColor),
               ),
               const SizedBox(width: 16),
-              const Icon(
-                Icons.access_time,
-                size: 20,
-                color: AppColors.lightText,
-              ),
+              Icon(Icons.access_time, size: 20, color: lightTextColor),
               const SizedBox(width: 8),
               Text(
                 event.hour,
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: AppColors.darkText,
-                ),
+                style: GoogleFonts.poppins(fontSize: 14, color: textColor),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // Ubicación
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 20,
-                color: AppColors.lightText,
-              ),
+              Icon(Icons.location_on_outlined, size: 20, color: lightTextColor),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   event.place,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: AppColors.darkText,
-                  ),
+                  style: GoogleFonts.poppins(fontSize: 14, color: textColor),
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          // Precio
           Row(
             children: [
-              const Icon(
-                Icons.attach_money,
-                size: 20,
-                color: AppColors.lightText,
-              ),
+              Icon(Icons.attach_money, size: 20, color: lightTextColor),
               const SizedBox(width: 8),
               Text(
                 event.formattedPrice,
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: event.isFree ? AppColors.success : AppColors.primary,
+                  color: event.isFree ? successColor : primaryColor,
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 20),
-
-          // Descripción
           Text(
             'Descripción',
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.darkText,
+              color: textColor,
             ),
           ),
           const SizedBox(height: 8),
@@ -1178,14 +1008,11 @@ class _MapScreenState extends State<MapScreen> {
             event.description,
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: AppColors.lightText,
+              color: lightTextColor,
               height: 1.5,
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // Botones de acción
           Row(
             children: [
               Expanded(
@@ -1197,13 +1024,11 @@ class _MapScreenState extends State<MapScreen> {
                   icon: const Icon(Icons.directions),
                   label: Text(
                     'Cómo llegar',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: AppColors.white,
+                    backgroundColor: primaryColor,
+                    foregroundColor: isDark ? Colors.black : Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -1217,18 +1042,12 @@ class _MapScreenState extends State<MapScreen> {
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.white,
-                  foregroundColor: AppColors.primary,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  foregroundColor: primaryColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: const BorderSide(
-                      color: AppColors.primary,
-                      width: 2,
-                    ),
+                    side: BorderSide(color: primaryColor, width: 2),
                   ),
                 ),
                 child: const Icon(Icons.close),
@@ -1240,34 +1059,34 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  /// Muestra un BottomSheet con los detalles de UN SOLO evento
   void _showEventDetailsBottomSheet(EventModel event) {
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final lightTextColor = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.6,
-        decoration: const BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: surfaceColor,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
         ),
         child: Column(
           children: [
-            // Handle bar
             Container(
               margin: const EdgeInsets.symmetric(vertical: 12),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: AppColors.lightText.withOpacity(0.3),
+                color: lightTextColor.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-
             Expanded(
               child: _buildEventDetails(event),
             ),
@@ -1277,7 +1096,6 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  /// Muestra la ruta desde la ubicación actual hasta el evento usando Mapbox Directions API
   void _showRouteToEvent(EventModel event) async {
     if (_userPosition == null) return;
 
@@ -1290,9 +1108,7 @@ class _MapScreenState extends State<MapScreen> {
     try {
       print("🗺️ Calculando ruta hacia ${event.title}...");
 
-      // Obtener la ruta real desde Mapbox Directions API
-      final routePoints =
-          await _getRouteFromMapbox(_userPosition!, destination);
+      final routePoints = await _getRouteFromMapbox(_userPosition!, destination);
 
       if (routePoints.isNotEmpty) {
         setState(() {
@@ -1302,8 +1118,10 @@ class _MapScreenState extends State<MapScreen> {
           _isLoading = false;
         });
 
-        // Ajustar el mapa para mostrar toda la ruta
         _fitMapToRoute();
+
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final successColor = isDark ? AppColorsDark.success : AppColors.success;
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1311,11 +1129,11 @@ class _MapScreenState extends State<MapScreen> {
               'Ruta calculada hacia ${event.title}',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: AppColors.success,
+            backgroundColor: successColor,
             duration: const Duration(seconds: 3),
             action: SnackBarAction(
               label: 'Ocultar',
-              textColor: AppColors.white,
+              textColor: Colors.white,
               onPressed: () {
                 _clearRoute();
               },
@@ -1330,13 +1148,10 @@ class _MapScreenState extends State<MapScreen> {
       setState(() {
         _isLoading = false;
       });
-
-      // Fallback: mostrar línea recta si la API falla
       _showStraightLineRoute(event, destination);
     }
   }
 
-  /// Método fallback: muestra línea recta si la API falla
   void _showStraightLineRoute(EventModel event, LatLng destination) {
     setState(() {
       _destinationPosition = destination;
@@ -1358,50 +1173,38 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  /// Ajusta el mapa para mostrar la ruta completa
   void _fitMapToRoute() {
     if (_userPosition == null || _destinationPosition == null) return;
 
-    // Calcular los bounds para incluir toda la ruta, no solo los puntos extremos
     final allPoints = _routePolyline.isNotEmpty
         ? _routePolyline
         : [_userPosition!, _destinationPosition!];
 
-    double minLat =
-        allPoints.map((p) => p.latitude).reduce((a, b) => a < b ? a : b);
-    double maxLat =
-        allPoints.map((p) => p.latitude).reduce((a, b) => a > b ? a : b);
-    double minLng =
-        allPoints.map((p) => p.longitude).reduce((a, b) => a < b ? a : b);
-    double maxLng =
-        allPoints.map((p) => p.longitude).reduce((a, b) => a > b ? a : b);
+    double minLat = allPoints.map((p) => p.latitude).reduce((a, b) => a < b ? a : b);
+    double maxLat = allPoints.map((p) => p.latitude).reduce((a, b) => a > b ? a : b);
+    double minLng = allPoints.map((p) => p.longitude).reduce((a, b) => a < b ? a : b);
+    double maxLng = allPoints.map((p) => p.longitude).reduce((a, b) => a > b ? a : b);
 
-    // Calcular centro
-    final center = LatLng(
-      (minLat + maxLat) / 2,
-      (minLng + maxLng) / 2,
-    );
+    final center = LatLng((minLat + maxLat) / 2, (minLng + maxLng) / 2);
 
-    // Calcular zoom apropiado basado en la distancia
     final latDiff = maxLat - minLat;
     final lngDiff = maxLng - minLng;
     final maxDiff = latDiff > lngDiff ? latDiff : lngDiff;
 
     double zoom;
     if (maxDiff < 0.01) {
-      zoom = 15.0; // Muy cerca
+      zoom = 15.0;
     } else if (maxDiff < 0.05) {
-      zoom = 13.0; // Cercano
+      zoom = 13.0;
     } else if (maxDiff < 0.1) {
-      zoom = 11.0; // Media distancia
+      zoom = 11.0;
     } else {
-      zoom = 10.0; // Lejos
+      zoom = 10.0;
     }
 
     _mapController.move(center, zoom);
   }
 
-  /// Limpia la ruta mostrada
   void _clearRoute() {
     setState(() {
       _showRoute = false;
@@ -1410,10 +1213,8 @@ class _MapScreenState extends State<MapScreen> {
     });
   }
 
-  /// Obtiene una ruta real usando Mapbox Directions API
   Future<List<LatLng>> _getRouteFromMapbox(LatLng start, LatLng end) async {
     try {
-      // Construir la URL para Mapbox Directions API
       final String coordinates =
           '${start.longitude},${start.latitude};${end.longitude},${end.latitude}';
 
@@ -1437,10 +1238,8 @@ class _MapScreenState extends State<MapScreen> {
           final route = data['routes'][0];
           final geometry = route['geometry'];
 
-          // Decodificar la geometría Polyline6 de Mapbox
           final List<dynamic> coordinates = geometry['coordinates'];
 
-          // Convertir coordenadas [lng, lat] a LatLng [lat, lng]
           List<LatLng> routePoints = coordinates.map((coord) {
             return LatLng(coord[1].toDouble(), coord[0].toDouble());
           }).toList();

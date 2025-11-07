@@ -41,7 +41,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(
         child: _buildCurrentScreen(),
       ),
@@ -70,6 +70,14 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   Widget _buildHomeContent() {
     final authProvider = Provider.of<AuthProvider>(context);
     final username = authProvider.currentUser?.username ?? 'Usuario';
+    
+    // Colores dinámicos según el tema
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final backgroundColor = Theme.of(context).colorScheme.background;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
 
     return CustomScrollView(
       slivers: [
@@ -92,7 +100,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                             style: GoogleFonts.poppins(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.darkText,
+                              color: textColor,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -104,7 +112,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                                 : 'Descubre eventos increíbles',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: AppColors.lightText,
+                              color: lightTextColor,
                             ),
                           ),
                         ],
@@ -112,9 +120,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                     ),
                     const SizedBox(width: 8),
                     IconButton(
-                      icon: const Icon(Icons.notifications_outlined),
+                      icon: Icon(Icons.notifications_outlined, color: textColor),
                       iconSize: 28,
-                      color: AppColors.darkText,
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -122,7 +129,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                               'Notificaciones próximamente',
                               style: GoogleFonts.poppins(),
                             ),
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: primaryColor,
                           ),
                         );
                       },
@@ -134,32 +141,24 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 // Barra de búsqueda
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.white,
+                    color: surfaceColor,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
                     ],
                   ),
                   child: TextField(
-                    style: GoogleFonts.poppins(),
+                    style: GoogleFonts.poppins(color: textColor),
                     decoration: InputDecoration(
                       hintText: 'Buscar eventos...',
-                      hintStyle: GoogleFonts.poppins(
-                        color: AppColors.lightText,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search,
-                        color: AppColors.lightText,
-                      ),
+                      hintStyle: GoogleFonts.poppins(color: lightTextColor),
+                      prefixIcon: Icon(Icons.search, color: lightTextColor),
                       suffixIcon: IconButton(
-                        icon: const Icon(
-                          Icons.tune,
-                          color: AppColors.primary,
-                        ),
+                        icon: Icon(Icons.tune, color: primaryColor),
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -167,7 +166,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                                 'Filtros próximamente',
                                 style: GoogleFonts.poppins(),
                               ),
-                              backgroundColor: AppColors.primary,
+                              backgroundColor: primaryColor,
                             ),
                           );
                         },
@@ -200,6 +199,10 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
               itemBuilder: (context, index) {
                 final category = _categories[index];
                 final isSelected = category == _selectedCategory;
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final primaryColor = Theme.of(context).colorScheme.primary;
+                final surfaceColor = Theme.of(context).colorScheme.surface;
+                final textColor = Theme.of(context).colorScheme.onSurface;
 
                 return GestureDetector(
                   onTap: () {
@@ -214,14 +217,16 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      gradient: isSelected ? AppColors.primaryGradient : null,
-                      color: isSelected ? null : AppColors.white,
+                      gradient: isSelected 
+                          ? (isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient)
+                          : null,
+                      color: isSelected ? null : surfaceColor,
                       borderRadius: BorderRadius.circular(25),
                       boxShadow: [
                         BoxShadow(
                           color: isSelected
-                              ? AppColors.primary.withOpacity(0.3)
-                              : Colors.black.withOpacity(0.05),
+                              ? primaryColor.withOpacity(0.3)
+                              : Colors.black.withOpacity(isDark ? 0.3 : 0.05),
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
@@ -230,10 +235,10 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                     child: Text(
                       category,
                       style: GoogleFonts.poppins(
-                        color:
-                            isSelected ? AppColors.white : AppColors.darkText,
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        color: isSelected 
+                            ? (isDark ? Colors.black : Colors.white)
+                            : textColor,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                         fontSize: 14,
                       ),
                     ),
@@ -258,7 +263,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.darkText,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 TextButton(
@@ -269,14 +274,14 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                           'Ver todos próximamente',
                           style: GoogleFonts.poppins(),
                         ),
-                        backgroundColor: AppColors.primary,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                       ),
                     );
                   },
                   child: Text(
                     'Ver todos',
                     style: GoogleFonts.poppins(
-                      color: AppColors.primary,
+                      color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -290,12 +295,19 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
         StreamBuilder<List<EventModel>>(
           stream: _eventService.getEventsByCategory(_selectedCategory),
           builder: (context, snapshot) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final surfaceColor = Theme.of(context).colorScheme.surface;
+            final textColor = Theme.of(context).colorScheme.onSurface;
+            final lightTextColor = textColor.withOpacity(0.6);
+            final errorColor = isDark ? AppColorsDark.error : AppColors.error;
+            final primaryColor = Theme.of(context).colorScheme.primary;
+
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SliverToBoxAdapter(
+              return SliverToBoxAdapter(
                 child: Center(
                   child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(),
+                    padding: const EdgeInsets.all(20),
+                    child: CircularProgressIndicator(color: primaryColor),
                   ),
                 ),
               );
@@ -308,22 +320,18 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(40),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: surfaceColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 60,
-                          color: AppColors.error,
-                        ),
+                        Icon(Icons.error_outline, size: 60, color: errorColor),
                         const SizedBox(height: 16),
                         Text(
                           'Error al cargar eventos',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: AppColors.error,
+                            color: errorColor,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -331,7 +339,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                           snapshot.error.toString(),
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: AppColors.lightText,
+                            color: lightTextColor,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -349,22 +357,18 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(40),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: surfaceColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
-                        const Icon(
-                          Icons.event_busy,
-                          size: 60,
-                          color: AppColors.lightText,
-                        ),
+                        Icon(Icons.event_busy, size: 60, color: lightTextColor),
                         const SizedBox(height: 16),
                         Text(
                           'No hay eventos disponibles',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: AppColors.lightText,
+                            color: lightTextColor,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -373,7 +377,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                             'Toca el botón + para crear uno',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: AppColors.primary,
+                              color: primaryColor,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -409,9 +413,18 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   Widget _buildSavedEvents() {
     final authProvider = Provider.of<AuthProvider>(context);
     final userId = authProvider.currentUser?.uid;
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
 
     if (userId == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      );
     }
 
     return CustomScrollView(
@@ -424,7 +437,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
               style: GoogleFonts.poppins(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppColors.darkText,
+                color: textColor,
               ),
             ),
           ),
@@ -433,11 +446,13 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
           stream: _eventService.getFavoriteEvents(userId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const SliverToBoxAdapter(
+              return SliverToBoxAdapter(
                 child: Center(
                   child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(),
+                    padding: const EdgeInsets.all(20),
+                    child: CircularProgressIndicator(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
                   ),
                 ),
               );
@@ -450,22 +465,18 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(40),
                     decoration: BoxDecoration(
-                      color: AppColors.white,
+                      color: surfaceColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       children: [
-                        const Icon(
-                          Icons.bookmark_border,
-                          size: 60,
-                          color: AppColors.lightText,
-                        ),
+                        Icon(Icons.bookmark_border, size: 60, color: lightTextColor),
                         const SizedBox(height: 16),
                         Text(
                           'No tienes eventos guardados',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
-                            color: AppColors.lightText,
+                            color: lightTextColor,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -473,7 +484,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                           'Guarda eventos tocando el ícono de marcador',
                           style: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: AppColors.lightText,
+                            color: lightTextColor,
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -506,14 +517,20 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   }
 
   Widget _buildDiscoverContent() {
-    return const MapScreen(); // Tu nueva pantalla de mapa
+    return const MapScreen();
   }
 
   Widget _buildEventCard(EventModel event) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userId = authProvider.currentUser?.uid;
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
 
-    // Obtener URL optimizada de la imagen
     final optimizedImageUrl = event.img != null
         ? _cloudinaryService.getOptimizedUrl(
             imageUrl: event.img!,
@@ -526,11 +543,11 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -549,7 +566,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 ),
                 child: optimizedImageUrl != null
                     ? Image.network(
-                        optimizedImageUrl, // Usar URL optimizada
+                        optimizedImageUrl,
                         height: 160,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -558,18 +575,15 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                           return Container(
                             height: 160,
                             width: double.infinity,
-                            color: Colors.grey.shade200,
+                            color: isDark ? AppColorsDark.surfaceVariant : Colors.grey.shade200,
                             child: Center(
                               child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
+                                value: loadingProgress.expectedTotalBytes != null
                                     ? loadingProgress.cumulativeBytesLoaded /
                                         loadingProgress.expectedTotalBytes!
                                     : null,
                                 strokeWidth: 2,
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                  AppColors.primary,
-                                ),
+                                valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
                               ),
                             ),
                           );
@@ -581,15 +595,15 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  AppColors.primary.withOpacity(0.3),
-                                  AppColors.secondary.withOpacity(0.3),
+                                  primaryColor.withOpacity(0.3),
+                                  (isDark ? AppColorsDark.secondary : AppColors.secondary).withOpacity(0.3),
                                 ],
                               ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.image_outlined,
                               size: 60,
-                              color: AppColors.white,
+                              color: isDark ? AppColorsDark.white : AppColors.white,
                             ),
                           );
                         },
@@ -600,15 +614,15 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              AppColors.primary.withOpacity(0.3),
-                              AppColors.secondary.withOpacity(0.3),
+                              primaryColor.withOpacity(0.3),
+                              (isDark ? AppColorsDark.secondary : AppColors.secondary).withOpacity(0.3),
                             ],
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.image_outlined,
                           size: 60,
-                          color: AppColors.white,
+                          color: isDark ? AppColorsDark.white : AppColors.white,
                         ),
                       ),
               ),
@@ -616,18 +630,15 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 top: 12,
                 left: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.primary,
+                    color: primaryColor,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     event.type,
                     style: GoogleFonts.poppins(
-                      color: AppColors.white,
+                      color: isDark ? Colors.black : Colors.white,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
@@ -644,7 +655,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                       final isFavorite = snapshot.data ?? false;
                       return Container(
                         decoration: BoxDecoration(
-                          color: AppColors.white,
+                          color: surfaceColor,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
@@ -657,12 +668,11 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                           icon: Icon(
                             isFavorite ? Icons.bookmark : Icons.bookmark_border,
                           ),
-                          color: AppColors.primary,
+                          color: primaryColor,
                           onPressed: () async {
                             try {
                               if (isFavorite) {
-                                await _eventService.removeFromFavorites(
-                                    userId, event.id);
+                                await _eventService.removeFromFavorites(userId, event.id);
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -670,13 +680,12 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                                       'Evento eliminado de favoritos',
                                       style: GoogleFonts.poppins(),
                                     ),
-                                    backgroundColor: AppColors.success,
+                                    backgroundColor: successColor,
                                     duration: const Duration(seconds: 2),
                                   ),
                                 );
                               } else {
-                                await _eventService.addToFavorites(
-                                    userId, event.id);
+                                await _eventService.addToFavorites(userId, event.id);
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -684,7 +693,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                                       'Evento guardado en favoritos',
                                       style: GoogleFonts.poppins(),
                                     ),
-                                    backgroundColor: AppColors.success,
+                                    backgroundColor: successColor,
                                     duration: const Duration(seconds: 2),
                                   ),
                                 );
@@ -697,7 +706,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                                     'Error al actualizar favoritos',
                                     style: GoogleFonts.poppins(),
                                   ),
-                                  backgroundColor: AppColors.error,
+                                  backgroundColor: isDark ? AppColorsDark.error : AppColors.error,
                                 ),
                               );
                             }
@@ -721,7 +730,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.darkText,
+                    color: textColor,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -729,50 +738,33 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.calendar_today_outlined,
-                      size: 16,
-                      color: AppColors.lightText,
-                    ),
+                    Icon(Icons.calendar_today_outlined, size: 16, color: lightTextColor),
                     const SizedBox(width: 8),
                     Text(
                       DateFormat('dd MMM, yyyy', 'es').format(event.date),
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: AppColors.lightText,
-                      ),
+                      style: GoogleFonts.poppins(fontSize: 14, color: lightTextColor),
                     ),
                     const SizedBox(width: 16),
-                    const Icon(
-                      Icons.access_time,
-                      size: 16,
-                      color: AppColors.lightText,
-                    ),
+                    Icon(Icons.access_time, size: 16, color: lightTextColor),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         event.hour,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: AppColors.lightText,
-                        ),
+                        style: GoogleFonts.poppins(fontSize: 14, color: lightTextColor),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.success.withOpacity(0.1),
+                        color: successColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         event.formattedPrice,
                         style: GoogleFonts.poppins(
                           fontSize: 13,
-                          color: AppColors.success,
+                          color: successColor,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -782,19 +774,12 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      size: 16,
-                      color: AppColors.lightText,
-                    ),
+                    Icon(Icons.location_on_outlined, size: 16, color: lightTextColor),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         event.place,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: AppColors.lightText,
-                        ),
+                        style: GoogleFonts.poppins(fontSize: 14, color: lightTextColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -810,12 +795,18 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   }
 
   Widget _buildBottomNavigationBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final textColor = Theme.of(context).colorScheme.onSurface;
+    final lightTextColor = textColor.withOpacity(0.6);
+
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.white,
+        color: surfaceColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, -5),
           ),
@@ -831,15 +822,13 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.lightText,
+        selectedItemColor: primaryColor,
+        unselectedItemColor: lightTextColor,
         selectedLabelStyle: GoogleFonts.poppins(
           fontWeight: FontWeight.w600,
           fontSize: 12,
         ),
-        unselectedLabelStyle: GoogleFonts.poppins(
-          fontSize: 12,
-        ),
+        unselectedLabelStyle: GoogleFonts.poppins(fontSize: 12),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -867,15 +856,18 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   }
 
   Widget _buildFloatingActionButton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return Container(
       height: 65,
       width: 65,
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient,
+        gradient: isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.4),
+            color: primaryColor.withOpacity(0.4),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -889,16 +881,15 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
               builder: (context) => const CreateEventScreen(),
             ),
           ).then((_) {
-            // Recargar eventos después de crear uno nuevo
             setState(() {});
           });
         },
         backgroundColor: Colors.transparent,
         elevation: 0,
-        child: const Icon(
+        child: Icon(
           Icons.add,
           size: 32,
-          color: AppColors.white,
+          color: isDark ? Colors.black : Colors.white,
         ),
       ),
     );
