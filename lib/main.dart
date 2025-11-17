@@ -6,11 +6,13 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
-import 'providers/language_provider.dart'; // NUEVO
+import 'providers/language_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/organizer_home_screen.dart';
 import 'constants/app_theme.dart';
-import 'l10n/app_localizations.dart'; // NUEVO
+import 'l10n/app_localizations.dart';
+import 'services/notification_service.dart'; // NUEVO
+import 'services/event_service.dart'; // NUEVO
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +21,11 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // NUEVO: Inicializar servicio de notificaciones
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+  await notificationService.requestPermissions();
 
   // Inicializar localizaciones de fecha en español e inglés
   await initializeDateFormatting('es_ES', null);
@@ -36,33 +43,32 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => LanguageProvider()), // NUEVO
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
       ],
       child: Consumer2<ThemeProvider, LanguageProvider>(
-        // NUEVO: Consumer2 para escuchar tema E idioma
         builder: (context, themeProvider, languageProvider, _) {
           return MaterialApp(
             title: 'DescubreNariño',
             debugShowCheckedModeBanner: false,
-            
+
             // CONFIGURACIÓN DE TEMA
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeModeEnum,
-            
+
             // CONFIGURACIÓN DE INTERNACIONALIZACIÓN
-            locale: languageProvider.locale, // NUEVO: Idioma actual
+            locale: languageProvider.locale,
             supportedLocales: const [
               Locale('es'), // Español
               Locale('en'), // English
             ],
             localizationsDelegates: const [
-              AppLocalizationsDelegate(), // NUEVO: Nuestras traducciones
+              AppLocalizationsDelegate(),
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            
+
             home: const AuthWrapper(),
           );
         },
@@ -87,11 +93,27 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (authProvider.isLoggedIn) {
+          // NUEVO: Reprogramar notificaciones al iniciar sesión
+          _rescheduleNotifications(authProvider);
           return const OrganizerHomeScreen();
         }
 
         return const LoginScreen();
       },
     );
+  }
+
+  /// Reprograma todas las notificaciones de eventos guardados
+  Future<void> _rescheduleNotifications(AuthProvider authProvider) async {
+    final userId = authProvider.currentUser?.uid;
+    if (userId == null) return;
+
+    try {
+      // Importar EventService
+      final eventService = EventService();
+      await eventService.rescheduleAllFavoriteNotifications(userId);
+    } catch (e) {
+      debugPrint('Error reprogramando notificaciones: $e');
+    }
   }
 }

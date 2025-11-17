@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event_model.dart';
+import 'notification_service.dart'; // NUEVO
 
 class EventService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final NotificationService _notificationService =
+      NotificationService(); // NUEVO
 
   // Crear un nuevo evento
   Future<String> createEvent(EventModel event) async {
@@ -87,8 +90,6 @@ class EventService {
   }
 
   // Eliminar un evento
-  // NOTA: Las imágenes de Cloudinary se quedan ahí (no hay API de eliminación en cloudinary_public)
-  // Si necesitas eliminarlas, debes usar la API Admin de Cloudinary desde el backend
   Future<void> deleteEvent(String eventId) async {
     try {
       await _firestore.collection('events').doc(eventId).delete();
@@ -116,9 +117,14 @@ class EventService {
     }
   }
 
-  // Agregar evento a favoritos
+  // ============================================
+  // FAVORITOS CON NOTIFICACIONES
+  // ============================================
+
+  /// Agregar evento a favoritos Y programar notificaciones
   Future<void> addToFavorites(String userId, String eventId) async {
     try {
+      // 1. Guardar en Firestore
       await _firestore
           .collection('users')
           .doc(userId)
@@ -128,20 +134,30 @@ class EventService {
         'eventId': eventId,
         'savedAt': FieldValue.serverTimestamp(),
       });
+
+      // 2. Programar notificaciones
+      final event = await getEventById(eventId);
+      if (event != null) {
+        await _notificationService.scheduleEventNotifications(event);
+      }
     } catch (e) {
       throw 'Error al agregar a favoritos: $e';
     }
   }
 
-  // Eliminar evento de favoritos
+  /// Eliminar evento de favoritos Y cancelar notificaciones
   Future<void> removeFromFavorites(String userId, String eventId) async {
     try {
+      // 1. Eliminar de Firestore
       await _firestore
           .collection('users')
           .doc(userId)
           .collection('favorites')
           .doc(eventId)
           .delete();
+
+      // 2. Cancelar notificaciones
+      await _notificationService.cancelEventNotifications(eventId);
     } catch (e) {
       throw 'Error al eliminar de favoritos: $e';
     }
@@ -188,6 +204,29 @@ class EventService {
       yield favoriteEvents;
     } catch (e) {
       yield [];
+    }
+  }
+
+  /// NUEVA FUNCIÓN: Reprogramar todas las notificaciones de favoritos
+  /// Útil después de reinstalar la app o limpiar caché
+  Future<void> rescheduleAllFavoriteNotifications(String userId) async {
+    try {
+      var favoritesSnapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('favorites')
+          .get();
+
+      for (var doc in favoritesSnapshot.docs) {
+        final eventId = doc.data()['eventId'] as String;
+        final event = await getEventById(eventId);
+
+        if (event != null && event.date.isAfter(DateTime.now())) {
+          await _notificationService.scheduleEventNotifications(event);
+        }
+      }
+    } catch (e) {
+      throw 'Error al reprogramar notificaciones: $e';
     }
   }
 

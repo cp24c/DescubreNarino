@@ -2,15 +2,25 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
+		<!-- Permisos de ubicación existentes -->
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Necesitamos tu ubicación para mostrarte eventos cercanos en el mapa</string>
 		<key>NSLocationAlwaysUsageDescription</key>
 		<string>Necesitamos tu ubicación para mostrarte eventos cercanos</string>
 		
+		<!-- NUEVO: Configuración de notificaciones -->
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>fetch</string>
+			<string>remote-notification</string>
+		</array>
+		<key>NSUserNotificationAlertStyle</key>
+		<string>alert</string>
+		
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>
-		<string>Descubre Narino</string>
+		<string>DescubreNariño</string>
 		<key>CFBundleExecutable</key>
 		<string>$(EXECUTABLE_NAME)</string>
 		<key>CFBundleIdentifier</key>
