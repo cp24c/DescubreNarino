@@ -1,11 +1,13 @@
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event_model.dart';
 import 'notification_service.dart'; // NUEVO
 
 class EventService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final NotificationService _notificationService =
-      NotificationService(); // NUEVO
+  // Usar el singleton global inicializado
+  NotificationService get _notificationService =>
+      NotificationService.instance; // NUEVO
 
   // Crear un nuevo evento
   Future<String> createEvent(EventModel event) async {

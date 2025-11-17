@@ -20,9 +20,17 @@ class NotificationService {
 
   bool _initialized = false;
 
+  /// Singleton global para acceso desde cualquier parte
+  static NotificationService get instance => _instance;
+
   /// Inicializa el servicio de notificaciones
   Future<void> initialize() async {
-    if (_initialized) return;
+    if (_initialized) {
+      debugPrint('✅ NotificationService ya estaba inicializado');
+      return;
+    }
+
+    debugPrint('🔧 Inicializando NotificationService...');
 
     // Inicializar zonas horarias
     tz.initializeTimeZones();
