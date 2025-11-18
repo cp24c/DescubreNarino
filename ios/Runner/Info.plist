@@ -6,7 +6,14 @@
 		<string>Necesitamos tu ubicación para mostrarte eventos cercanos en el mapa</string>
 		<key>NSLocationAlwaysUsageDescription</key>
 		<string>Necesitamos tu ubicación para mostrarte eventos cercanos</string>
-		
+
+		<!-- Permisos para el chatbot con voz -->
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Necesitamos acceso al micrófono para que puedas hacer preguntas al chatbot por voz</string>
+
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Necesitamos acceso al micrófono para reconocimiento de voz</string>
+
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

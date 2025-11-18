@@ -1,3 +1,4 @@
+import 'package:descubre_narino/screens/chat/chatbot_screen.dart';
 import 'package:descubre_narino/screens/map/map_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -61,7 +62,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
       case 2:
         return _buildDiscoverContent();
       case 3:
-        return const ProfileScreen();
+        return const ProfileScreen(); // Cambiado de ChatbotScreen a ProfileScreen
       default:
         return _buildHomeContent();
     }
@@ -70,7 +71,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   Widget _buildHomeContent() {
     final authProvider = Provider.of<AuthProvider>(context);
     final username = authProvider.currentUser?.username ?? 'Usuario';
-    
+
     // Colores dinámicos según el tema
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -120,7 +121,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                     ),
                     const SizedBox(width: 8),
                     IconButton(
-                      icon: Icon(Icons.notifications_outlined, color: textColor),
+                      icon:
+                          Icon(Icons.notifications_outlined, color: textColor),
                       iconSize: 28,
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -134,6 +136,19 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                         );
                       },
                     ),
+                    IconButton(
+                      icon: Icon(Icons.smart_toy_outlined, color: primaryColor),
+                      iconSize: 28,
+                      tooltip: 'Chat con NariñoBot',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const ChatbotScreen()),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -217,8 +232,10 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      gradient: isSelected 
-                          ? (isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient)
+                      gradient: isSelected
+                          ? (isDark
+                              ? AppColorsDark.primaryGradient
+                              : AppColors.primaryGradient)
                           : null,
                       color: isSelected ? null : surfaceColor,
                       borderRadius: BorderRadius.circular(25),
@@ -235,10 +252,11 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                     child: Text(
                       category,
                       style: GoogleFonts.poppins(
-                        color: isSelected 
+                        color: isSelected
                             ? (isDark ? Colors.black : Colors.white)
                             : textColor,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
                         fontSize: 14,
                       ),
                     ),
@@ -413,7 +431,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   Widget _buildSavedEvents() {
     final authProvider = Provider.of<AuthProvider>(context);
     final userId = authProvider.currentUser?.uid;
-    
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final surfaceColor = Theme.of(context).colorScheme.surface;
     final textColor = Theme.of(context).colorScheme.onSurface;
@@ -470,7 +488,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                     ),
                     child: Column(
                       children: [
-                        Icon(Icons.bookmark_border, size: 60, color: lightTextColor),
+                        Icon(Icons.bookmark_border,
+                            size: 60, color: lightTextColor),
                         const SizedBox(height: 16),
                         Text(
                           'No tienes eventos guardados',
@@ -523,7 +542,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
   Widget _buildEventCard(EventModel event) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userId = authProvider.currentUser?.uid;
-    
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primaryColor = Theme.of(context).colorScheme.primary;
     final surfaceColor = Theme.of(context).colorScheme.surface;
@@ -575,15 +594,19 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                           return Container(
                             height: 160,
                             width: double.infinity,
-                            color: isDark ? AppColorsDark.surfaceVariant : Colors.grey.shade200,
+                            color: isDark
+                                ? AppColorsDark.surfaceVariant
+                                : Colors.grey.shade200,
                             child: Center(
                               child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
                                     ? loadingProgress.cumulativeBytesLoaded /
                                         loadingProgress.expectedTotalBytes!
                                     : null,
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(primaryColor),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(primaryColor),
                               ),
                             ),
                           );
@@ -596,14 +619,19 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                               gradient: LinearGradient(
                                 colors: [
                                   primaryColor.withOpacity(0.3),
-                                  (isDark ? AppColorsDark.secondary : AppColors.secondary).withOpacity(0.3),
+                                  (isDark
+                                          ? AppColorsDark.secondary
+                                          : AppColors.secondary)
+                                      .withOpacity(0.3),
                                 ],
                               ),
                             ),
                             child: Icon(
                               Icons.image_outlined,
                               size: 60,
-                              color: isDark ? AppColorsDark.white : AppColors.white,
+                              color: isDark
+                                  ? AppColorsDark.white
+                                  : AppColors.white,
                             ),
                           );
                         },
@@ -615,7 +643,10 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                           gradient: LinearGradient(
                             colors: [
                               primaryColor.withOpacity(0.3),
-                              (isDark ? AppColorsDark.secondary : AppColors.secondary).withOpacity(0.3),
+                              (isDark
+                                      ? AppColorsDark.secondary
+                                      : AppColors.secondary)
+                                  .withOpacity(0.3),
                             ],
                           ),
                         ),
@@ -630,7 +661,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 top: 12,
                 left: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: primaryColor,
                     borderRadius: BorderRadius.circular(20),
@@ -672,7 +704,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                           onPressed: () async {
                             try {
                               if (isFavorite) {
-                                await _eventService.removeFromFavorites(userId, event.id);
+                                await _eventService.removeFromFavorites(
+                                    userId, event.id);
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -685,7 +718,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                                   ),
                                 );
                               } else {
-                                await _eventService.addToFavorites(userId, event.id);
+                                await _eventService.addToFavorites(
+                                    userId, event.id);
                                 if (!mounted) return;
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -706,7 +740,9 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                                     'Error al actualizar favoritos',
                                     style: GoogleFonts.poppins(),
                                   ),
-                                  backgroundColor: isDark ? AppColorsDark.error : AppColors.error,
+                                  backgroundColor: isDark
+                                      ? AppColorsDark.error
+                                      : AppColors.error,
                                 ),
                               );
                             }
@@ -738,11 +774,13 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Icon(Icons.calendar_today_outlined, size: 16, color: lightTextColor),
+                    Icon(Icons.calendar_today_outlined,
+                        size: 16, color: lightTextColor),
                     const SizedBox(width: 8),
                     Text(
                       DateFormat('dd MMM, yyyy', 'es').format(event.date),
-                      style: GoogleFonts.poppins(fontSize: 14, color: lightTextColor),
+                      style: GoogleFonts.poppins(
+                          fontSize: 14, color: lightTextColor),
                     ),
                     const SizedBox(width: 16),
                     Icon(Icons.access_time, size: 16, color: lightTextColor),
@@ -750,12 +788,14 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                     Expanded(
                       child: Text(
                         event.hour,
-                        style: GoogleFonts.poppins(fontSize: 14, color: lightTextColor),
+                        style: GoogleFonts.poppins(
+                            fontSize: 14, color: lightTextColor),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
                         color: successColor.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -774,12 +814,14 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.location_on_outlined, size: 16, color: lightTextColor),
+                    Icon(Icons.location_on_outlined,
+                        size: 16, color: lightTextColor),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         event.place,
-                        style: GoogleFonts.poppins(fontSize: 14, color: lightTextColor),
+                        style: GoogleFonts.poppins(
+                            fontSize: 14, color: lightTextColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -863,7 +905,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
       height: 65,
       width: 65,
       decoration: BoxDecoration(
-        gradient: isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
+        gradient:
+            isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
