@@ -58,12 +58,13 @@ class NotificationService {
     );
 
     _initialized = true;
+    debugPrint('✅ NotificationService inicializado correctamente');
   }
 
   /// Maneja el tap en la notificación
   void _onNotificationTapped(NotificationResponse response) {
     // TODO: Navegar al detalle del evento usando el payload (eventId)
-    debugPrint('Notificación tocada: ${response.payload}');
+    debugPrint('📱 Notificación tocada: ${response.payload}');
   }
 
   /// Solicita permisos de notificación (especialmente para iOS)
@@ -110,6 +111,7 @@ class NotificationService {
     debugPrint('📅 Programando notificaciones para: ${event.title}');
     debugPrint('   📍 Fecha del evento: $eventDateTime');
     debugPrint('   ⏰ Fecha actual: $now');
+    debugPrint('   🕐 Diferencia: ${eventDateTime.difference(now)}');
 
     // No programar si el evento ya pasó
     if (eventDateTime.isBefore(now)) {
@@ -122,71 +124,101 @@ class NotificationService {
 
     int notificationsScheduled = 0;
 
-    // 1️⃣ Notificación 1 día antes (9:00 AM)
-    final oneDayBefore = eventDateTime.subtract(const Duration(days: 1));
-    final oneDayBeforeAt9AM = DateTime(
-      oneDayBefore.year,
-      oneDayBefore.month,
-      oneDayBefore.day,
-      9, // 9:00 AM
-      0,
-    );
-
-    if (oneDayBeforeAt9AM.isAfter(now)) {
-      await _scheduleNotification(
-        id: _getNotificationId(event.id, 1),
-        title: '📅 Evento mañana: ${event.title}',
-        body: '${event.title} es mañana a las ${event.hour}',
-        scheduledDate: oneDayBeforeAt9AM,
-        payload: event.id,
-        eventImage: event.img,
+    try {
+      // 1️⃣ Notificación 1 día antes (9:00 AM)
+      final oneDayBefore = eventDateTime.subtract(const Duration(days: 1));
+      final oneDayBeforeAt9AM = DateTime(
+        oneDayBefore.year,
+        oneDayBefore.month,
+        oneDayBefore.day,
       );
-      notificationsScheduled++;
+
+      if (oneDayBeforeAt9AM.isAfter(now)) {
+        try {
+          await _scheduleNotification(
+            id: _getNotificationId(event.id, 1),
+            title: '📅 Evento mañana: ${event.title}',
+            body: '${event.title} es mañana a las ${event.hour}',
+            scheduledDate: oneDayBeforeAt9AM,
+            payload: event.id,
+            eventImage: event.img,
+          );
+          notificationsScheduled++;
+          debugPrint(
+              '   ✅ Notificación 1 día antes programada para: $oneDayBeforeAt9AM');
+          debugPrint('      ID: ${_getNotificationId(event.id, 1)}');
+        } catch (e) {
+          debugPrint('   ❌ Error programando notificación 1 día antes: $e');
+        }
+      } else {
+        debugPrint(
+            '   ⏭️ Notificación 1 día antes omitida (ya pasó: $oneDayBeforeAt9AM)');
+      }
+
+      // 2️⃣ Notificación 2 horas antes
+      final twoHoursBefore = eventDateTime.subtract(const Duration(hours: 2));
+
+      if (twoHoursBefore.isAfter(now)) {
+        try {
+          await _scheduleNotification(
+            id: _getNotificationId(event.id, 2),
+            title: '⏰ En 2 horas: ${event.title}',
+            body: 'El evento comienza a las ${event.hour} en ${event.place}',
+            scheduledDate: twoHoursBefore,
+            payload: event.id,
+            eventImage: event.img,
+          );
+          notificationsScheduled++;
+          debugPrint(
+              '   ✅ Notificación 2 horas antes programada para: $twoHoursBefore');
+          debugPrint('      ID: ${_getNotificationId(event.id, 2)}');
+        } catch (e) {
+          debugPrint('   ❌ Error programando notificación 2 horas antes: $e');
+        }
+      } else {
+        debugPrint(
+            '   ⏭️ Notificación 2 horas antes omitida (ya pasó: $twoHoursBefore)');
+      }
+
+      // 3️⃣ Notificación al momento del evento
+      if (eventDateTime.isAfter(now)) {
+        try {
+          await _scheduleNotification(
+            id: _getNotificationId(event.id, 3),
+            title: '🎉 ¡${event.title} comienza ahora!',
+            body:
+                'El evento está en ${event.place}. ${event.isFree ? 'Entrada gratis' : 'Precio: ${event.formattedPrice}'}',
+            scheduledDate: eventDateTime,
+            payload: event.id,
+            eventImage: event.img,
+          );
+          notificationsScheduled++;
+          debugPrint(
+              '   ✅ Notificación al momento programada para: $eventDateTime');
+          debugPrint('      ID: ${_getNotificationId(event.id, 3)}');
+        } catch (e) {
+          debugPrint('   ❌ Error programando notificación al momento: $e');
+        }
+      } else {
+        debugPrint('   ⏭️ Notificación al momento omitida (ya pasó)');
+      }
+
       debugPrint(
-          '   ✅ Notificación 1 día antes programada para: $oneDayBeforeAt9AM');
-    } else {
-      debugPrint('   ⏭️ Notificación 1 día antes omitida (ya pasó)');
-    }
+          '✅ Total de notificaciones programadas: $notificationsScheduled para "${event.title}"');
 
-    // 2️⃣ Notificación 2 horas antes
-    final twoHoursBefore = eventDateTime.subtract(const Duration(hours: 2));
-
-    if (twoHoursBefore.isAfter(now)) {
-      await _scheduleNotification(
-        id: _getNotificationId(event.id, 2),
-        title: '⏰ En 2 horas: ${event.title}',
-        body: 'El evento comienza a las ${event.hour} en ${event.place}',
-        scheduledDate: twoHoursBefore,
-        payload: event.id,
-        eventImage: event.img,
-      );
-      notificationsScheduled++;
+      // Verificar notificaciones pendientes
+      final pending = await getPendingNotifications();
       debugPrint(
-          '   ✅ Notificación 2 horas antes programada para: $twoHoursBefore');
-    } else {
-      debugPrint('   ⏭️ Notificación 2 horas antes omitida (ya pasó)');
+          '📋 Total de notificaciones pendientes en el sistema: ${pending.length}');
+      for (var notification in pending) {
+        if (notification.payload == event.id) {
+          debugPrint('   🔔 ID: ${notification.id} - ${notification.title}');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Error general al programar notificaciones: $e');
+      rethrow;
     }
-
-    // 3️⃣ Notificación al momento del evento
-    if (eventDateTime.isAfter(now)) {
-      await _scheduleNotification(
-        id: _getNotificationId(event.id, 3),
-        title: '🎉 ¡${event.title} comienza ahora!',
-        body:
-            'El evento está en ${event.place}. ${event.isFree ? 'Entrada gratis' : 'Precio: ${event.formattedPrice}'}',
-        scheduledDate: eventDateTime,
-        payload: event.id,
-        eventImage: event.img,
-      );
-      notificationsScheduled++;
-      debugPrint(
-          '   ✅ Notificación al momento programada para: $eventDateTime');
-    } else {
-      debugPrint('   ⏭️ Notificación al momento omitida (ya pasó)');
-    }
-
-    debugPrint(
-        '✅ Total de notificaciones programadas: $notificationsScheduled para "${event.title}"');
   }
 
   /// Programa una notificación individual
@@ -200,22 +232,16 @@ class NotificationService {
   }) async {
     final scheduledTZ = tz.TZDateTime.from(scheduledDate, tz.local);
 
-    // Estilo de notificación para Android
-    final androidDetails = AndroidNotificationDetails(
+    // Estilo de notificación para Android (SIN sonido personalizado)
+    const androidDetails = AndroidNotificationDetails(
       'event_reminders',
       'Recordatorios de Eventos',
       channelDescription: 'Notificaciones para recordar eventos guardados',
       importance: Importance.high,
       priority: Priority.high,
       icon: '@mipmap/ic_launcher',
-      styleInformation: eventImage != null
-          ? BigPictureStyleInformation(
-              FilePathAndroidBitmap(eventImage),
-              contentTitle: title,
-              summaryText: body,
-            )
-          : const BigTextStyleInformation(''),
-      sound: const RawResourceAndroidNotificationSound('notification'),
+      // ❌ REMOVIDO: sound: const RawResourceAndroidNotificationSound('notification'),
+      // ✅ Usar sonido por defecto del sistema
       playSound: true,
       enableVibration: true,
     );
@@ -228,7 +254,7 @@ class NotificationService {
       sound: 'default',
     );
 
-    final notificationDetails = NotificationDetails(
+    const notificationDetails = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -275,6 +301,8 @@ class NotificationService {
       channelDescription: 'Canal para probar notificaciones',
       importance: Importance.high,
       priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -301,10 +329,19 @@ class NotificationService {
   // ============================================
 
   /// Genera un ID único para cada notificación
-  /// Formato: primeros 8 caracteres del eventId + tipo (1, 2, 3)
+  /// Combina el hash del eventId con el tipo para garantizar IDs únicos
   int _getNotificationId(String eventId, int type) {
+    // Generar hash del eventId
     final hashCode = eventId.hashCode.abs();
-    return int.parse('$hashCode$type'.substring(0, 9));
+
+    // Limitar a 8 dígitos para dejar espacio al tipo
+    final baseId = hashCode % 100000000; // Máximo 8 dígitos
+
+    // Agregar el tipo al final (último dígito)
+    final uniqueId = baseId * 10 + type;
+
+    debugPrint('   🔢 ID generado: $uniqueId (base: $baseId, tipo: $type)');
+    return uniqueId;
   }
 
   /// Convierte la fecha y hora del evento a DateTime

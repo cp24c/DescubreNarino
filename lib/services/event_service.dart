@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/event_model.dart';
-import 'notification_service.dart'; // NUEVO
+import 'notification_service.dart';
 
 class EventService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  // Usar el singleton global inicializado
-  NotificationService get _notificationService =>
-      NotificationService.instance; // NUEVO
+  NotificationService get _notificationService => NotificationService.instance;
 
   // Crear un nuevo evento
   Future<String> createEvent(EventModel event) async {
@@ -120,12 +118,14 @@ class EventService {
   }
 
   // ============================================
-  // FAVORITOS CON NOTIFICACIONES
+  // FAVORITOS CON NOTIFICACIONES - CORREGIDO
   // ============================================
 
   /// Agregar evento a favoritos Y programar notificaciones
   Future<void> addToFavorites(String userId, String eventId) async {
     try {
+      debugPrint('🔔 [EventService] Agregando evento $eventId a favoritos...');
+
       // 1. Guardar en Firestore
       await _firestore
           .collection('users')
@@ -137,12 +137,21 @@ class EventService {
         'savedAt': FieldValue.serverTimestamp(),
       });
 
-      // 2. Programar notificaciones
+      debugPrint('✅ [EventService] Evento guardado en Firestore');
+
+      // 2. Programar notificaciones DESPUÉS de guardar
       final event = await getEventById(eventId);
       if (event != null) {
+        debugPrint(
+            '📅 [EventService] Obtenido evento para notificaciones: ${event.title}');
         await _notificationService.scheduleEventNotifications(event);
+        debugPrint('✅ [EventService] Notificaciones programadas exitosamente');
+      } else {
+        debugPrint(
+            '⚠️ [EventService] No se pudo obtener el evento para notificaciones');
       }
     } catch (e) {
+      debugPrint('❌ [EventService] Error al agregar a favoritos: $e');
       throw 'Error al agregar a favoritos: $e';
     }
   }
@@ -150,6 +159,9 @@ class EventService {
   /// Eliminar evento de favoritos Y cancelar notificaciones
   Future<void> removeFromFavorites(String userId, String eventId) async {
     try {
+      debugPrint(
+          '🗑️ [EventService] Eliminando evento $eventId de favoritos...');
+
       // 1. Eliminar de Firestore
       await _firestore
           .collection('users')
@@ -158,9 +170,13 @@ class EventService {
           .doc(eventId)
           .delete();
 
+      debugPrint('✅ [EventService] Evento eliminado de Firestore');
+
       // 2. Cancelar notificaciones
       await _notificationService.cancelEventNotifications(eventId);
+      debugPrint('✅ [EventService] Notificaciones canceladas exitosamente');
     } catch (e) {
+      debugPrint('❌ [EventService] Error al eliminar de favoritos: $e');
       throw 'Error al eliminar de favoritos: $e';
     }
   }
@@ -209,25 +225,31 @@ class EventService {
     }
   }
 
-  /// NUEVA FUNCIÓN: Reprogramar todas las notificaciones de favoritos
-  /// Útil después de reinstalar la app o limpiar caché
+  /// Reprogramar todas las notificaciones de favoritos
   Future<void> rescheduleAllFavoriteNotifications(String userId) async {
     try {
+      debugPrint('🔄 [EventService] Reprogramando todas las notificaciones...');
+
       var favoritesSnapshot = await _firestore
           .collection('users')
           .doc(userId)
           .collection('favorites')
           .get();
 
+      int count = 0;
       for (var doc in favoritesSnapshot.docs) {
         final eventId = doc.data()['eventId'] as String;
         final event = await getEventById(eventId);
 
         if (event != null && event.date.isAfter(DateTime.now())) {
           await _notificationService.scheduleEventNotifications(event);
+          count++;
         }
       }
+
+      debugPrint('✅ [EventService] $count notificaciones reprogramadas');
     } catch (e) {
+      debugPrint('❌ [EventService] Error al reprogramar notificaciones: $e');
       throw 'Error al reprogramar notificaciones: $e';
     }
   }
