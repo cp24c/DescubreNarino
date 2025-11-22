@@ -17,6 +17,14 @@
 		<key>NSUserNotificationAlertStyle</key>
 		<string>alert</string>
 		
+
+		<!-- Permisos para el chatbot con voz -->
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>Necesitamos acceso al micrófono para que puedas hacer preguntas al chatbot por voz</string>
+
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Necesitamos acceso al micrófono para reconocimiento de voz</string>
+
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

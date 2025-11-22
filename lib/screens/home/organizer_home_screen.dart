@@ -1,3 +1,4 @@
+import 'package:descubre_narino/screens/chat/chatbot_screen.dart';
 import 'package:descubre_narino/screens/map/map_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -43,7 +44,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
 
   // NUEVO: Stream para obtener el contador de notificaciones
   Stream<List<PendingNotificationRequest>>
-  _getNotificationCountStream() async* {
+      _getNotificationCountStream() async* {
     while (true) {
       yield await _notificationService.getPendingNotifications();
       await Future.delayed(
@@ -60,9 +61,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
       backgroundColor: Theme.of(context).colorScheme.background,
       body: SafeArea(child: _buildCurrentScreen()),
       bottomNavigationBar: _buildBottomNavigationBar(),
-      floatingActionButton: authProvider.isOrganizer
-          ? _buildFloatingActionButton()
-          : null,
+      floatingActionButton:
+          authProvider.isOrganizer ? _buildFloatingActionButton() : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
@@ -76,7 +76,7 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
       case 2:
         return _buildDiscoverContent();
       case 3:
-        return const ProfileScreen();
+        return const ProfileScreen(); // Cambiado de ChatbotScreen a ProfileScreen
       default:
         return _buildHomeContent();
     }
@@ -210,6 +210,19 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                         );
                       },
                     ),
+                    IconButton(
+                      icon: Icon(Icons.smart_toy_outlined, color: primaryColor),
+                      iconSize: 28,
+                      tooltip: 'Chat con NariñoBot',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const ChatbotScreen()),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -295,8 +308,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                     decoration: BoxDecoration(
                       gradient: isSelected
                           ? (isDark
-                                ? AppColorsDark.primaryGradient
-                                : AppColors.primaryGradient)
+                              ? AppColorsDark.primaryGradient
+                              : AppColors.primaryGradient)
                           : null,
                       color: isSelected ? null : surfaceColor,
                       borderRadius: BorderRadius.circular(25),
@@ -316,9 +329,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                         color: isSelected
                             ? (isDark ? Colors.black : Colors.white)
                             : textColor,
-                        fontWeight: isSelected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
                         fontSize: 14,
                       ),
                     ),
@@ -654,10 +666,10 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
                                 : Colors.grey.shade200,
                             child: Center(
                               child: CircularProgressIndicator(
-                                value:
-                                    loadingProgress.expectedTotalBytes != null
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
                                     ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
+                                        loadingProgress.expectedTotalBytes!
                                     : null,
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
@@ -981,9 +993,8 @@ class _OrganizerHomeScreenState extends State<OrganizerHomeScreen> {
       height: 65,
       width: 65,
       decoration: BoxDecoration(
-        gradient: isDark
-            ? AppColorsDark.primaryGradient
-            : AppColors.primaryGradient,
+        gradient:
+            isDark ? AppColorsDark.primaryGradient : AppColors.primaryGradient,
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
